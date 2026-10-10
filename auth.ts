@@ -23,9 +23,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (!dbUser) {
           dbUser = await User.create({
-            name: user.name,
+            name: user.name ?? undefined,
             email: user.email.toLowerCase(),
-            image: user.image,
+            image: user.image ?? undefined,
           });
         }
 

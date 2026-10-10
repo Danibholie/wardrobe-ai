@@ -1,12 +1,12 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
-const apiKey = process.env.GEMINI_API_KEY;
-
-if (!apiKey) {
-  throw new Error("Missing GEMINI_API_KEY in .env.local");
+function getAI() {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("Missing GEMINI_API_KEY in .env.local");
+  }
+  return new GoogleGenAI({ apiKey });
 }
-
-const ai = new GoogleGenAI({ apiKey });
 
 const clothingSchema = {
   type: Type.OBJECT,
@@ -52,6 +52,7 @@ export async function identifyClothing(imageUrl: string) {
 
   const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
 
+  const ai = getAI();
   const response = await ai.models.generateContent({
     model: "gemini-2.5-flash",
     contents: [

@@ -1,34 +1,31 @@
+
 import { identifyClothing } from "@/lib/ai";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-
-    const imageUrl = body.imageUrl;
+    const { imageUrl } = body;
 
     if (!imageUrl || typeof imageUrl !== "string") {
       return Response.json(
-        {
-          success: false,
-          message: "Image URL is required.",
-        },
+        { success: false, message: "Image URL is required." },
         { status: 400 }
       );
     }
 
     const clothing = await identifyClothing(imageUrl);
 
-    return Response.json({
-      success: true,
-      clothing,
-    });
+    return Response.json({ success: true, clothing });
   } catch (error) {
     console.error("Clothing identification error:", error);
 
     return Response.json(
       {
         success: false,
-        message: "Failed to identify clothing.",
+        message:
+          error instanceof Error
+            ? error.message
+            : "An unknown error occurred.",
       },
       { status: 500 }
     );

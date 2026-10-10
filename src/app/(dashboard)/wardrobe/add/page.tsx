@@ -1,28 +1,65 @@
 "use client";
 
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
+
+type ClothingDetails = {
+  name: string;
+  category: string;
+  subcategory: string;
+  color: string;
+  style: string;
+};
+
+const categories = [
+  "tops",
+  "bottoms",
+  "dresses",
+  "outerwear",
+  "shoes",
+  "accessories",
+  "traditional",
+];
 
 export default function AddClothingPage() {
   const [image, setImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
   const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [identifying, setIdentifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [details, setDetails] = useState<ClothingDetails | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl?.startsWith("blob:")) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-
     if (!file) return;
+
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setError("Please choose a JPG, PNG, or WEBP image.");
+      return;
+    }
 
     setError(null);
     setUploadedUrl(null);
+    setDetails(null);
     setImage(file);
-
-    const url = URL.createObjectURL(file);
-    setPreviewUrl(url);
+    setPreviewUrl(URL.createObjectURL(file));
   }
 
-  async function handleUpload() {
+  function updateDetail(field: keyof ClothingDetails, value: string) {
+    setDetails((current) =>
+      current ? { ...current, [field]: value } : current,
+    );
+  }
+
+  async function handleUploadAndIdentify() {
     if (!image) {
       setError("Please choose a photo first.");
       return;
@@ -30,34 +67,72 @@ export default function AddClothingPage() {
 
     setUploading(true);
     setError(null);
+    setDetails(null);
+    setUploadedUrl(null);
 
     try {
+      // Step 1: Upload the photo to Cloudinary.
       const formData = new FormData();
       formData.append("file", image);
 
-      const response = await fetch("/api/upload", {
+      const uploadResponse = await fetch("/api/upload", {
         method: "POST",
         body: formData,
       });
 
-      const data = await response.json();
+      const uploadData = await uploadResponse.json();
 
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || "Upload failed.");
+      if (!uploadResponse.ok || !uploadData.success || !uploadData.imageUrl) {
+        throw new Error(uploadData.message || "Photo upload failed.");
       }
 
-      setUploadedUrl(data.imageUrl);
-    } catch (error) {
-      console.error(error);
+      const imageUrl: string = uploadData.imageUrl;
+      setUploadedUrl(imageUrl);
 
+      // Step 2: Ask Gemini to identify the clothing.
+      setUploading(false);
+      setIdentifying(true);
+
+      const identifyResponse = await fetch("/api/identify-clothing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageUrl }),
+      });
+
+      const identifyData = await identifyResponse.json();
+
+      if (!identifyResponse.ok || !identifyData.success) {
+        throw new Error(
+          identifyData.message || "Could not identify this clothing item.",
+        );
+      }
+
+      setDetails({
+        name: identifyData.clothing.name ?? "",
+        category: identifyData.clothing.category ?? "tops",
+        subcategory: identifyData.clothing.subcategory ?? "",
+        color: identifyData.clothing.color ?? "",
+        style: identifyData.clothing.style ?? "",
+      });
+    } catch (err) {
+      console.error("Upload or identification error:", err);
       setError(
-        error instanceof Error
-          ? error.message
-          : "Something went wrong while uploading.",
+        err instanceof Error
+          ? err.message
+          : "Something went wrong. Please try again.",
       );
     } finally {
       setUploading(false);
+      setIdentifying(false);
     }
+  }
+
+  function resetSelection() {
+    setImage(null);
+    setPreviewUrl(null);
+    setUploadedUrl(null);
+    setDetails(null);
+    setError(null);
   }
 
   return (
@@ -80,8 +155,8 @@ export default function AddClothingPage() {
           </h1>
 
           <p className="mt-2 text-sm leading-6 text-[#68736D]">
-            Upload a clear photo of one clothing item. We&apos;ll identify it
-            and let you confirm the details before adding it to your wardrobe.
+            Upload a clear photo of one item. Gemini will identify it, and you
+            can review the details before saving it.
           </p>
         </div>
 
@@ -97,8 +172,8 @@ export default function AddClothingPage() {
               </h2>
 
               <p className="mt-2 max-w-sm text-sm leading-6 text-[#68736D]">
-                Choose a clear photo showing one item. A simple photo on a plain
-                background works best.
+                Choose a clear photo showing one item. A plain background works
+                best.
               </p>
 
               <span className="mt-6 rounded-full bg-[#173B2A] px-6 py-3 text-sm font-medium text-white">
@@ -117,7 +192,7 @@ export default function AddClothingPage() {
               />
             </label>
           ) : (
-            <div>
+            <>
               <div className="overflow-hidden rounded-2xl bg-[#F7F5F0]">
                 <img
                   src={previewUrl}
@@ -129,45 +204,144 @@ export default function AddClothingPage() {
               <div className="mt-5 flex flex-col gap-3 sm:flex-row">
                 <button
                   type="button"
-                  onClick={() => {
-                    setImage(null);
-                    setPreviewUrl(null);
-                    setUploadedUrl(null);
-                    setError(null);
-                  }}
-                  className="rounded-full border border-[#D8DDD8] px-6 py-3 text-sm font-medium text-[#315343]"
+                  onClick={resetSelection}
+                  disabled={uploading || identifying}
+                  className="rounded-full border border-[#D8DDD8] px-6 py-3 text-sm font-medium text-[#315343] disabled:opacity-50"
                 >
                   Choose another
                 </button>
 
                 <button
                   type="button"
-                  onClick={handleUpload}
-                  disabled={uploading}
+                  onClick={handleUploadAndIdentify}
+                  disabled={uploading || identifying || !!details}
                   className="rounded-full bg-[#173B2A] px-6 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {uploading ? "Uploading..." : "Upload photo"}
+                  {uploading
+                    ? "Uploading photo..."
+                    : identifying
+                      ? "Identifying clothing..."
+                      : details
+                        ? "Identification complete"
+                        : "Upload and identify"}
                 </button>
               </div>
-            </div>
+            </>
           )}
 
-          {error && (
-            <p className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
-              {error}
+          {(uploading || identifying) && (
+            <p className="mt-5 text-sm text-[#68736D]">
+              {uploading
+                ? "Uploading your photo securely..."
+                : "Gemini is analysing the visible clothing details..."}
             </p>
           )}
 
-          {uploadedUrl && (
-            <div className="mt-5 rounded-xl bg-[#EEF1EC] px-4 py-3">
-              <p className="text-sm font-medium text-[#173B2A]">
-                Photo uploaded successfully.
+          {error && (
+            <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
+
+          {details && (
+            <section className="mt-8 border-t border-[#E7E9E4] pt-6">
+              <p className="text-sm font-medium text-[#315343]">
+                AI identification
               </p>
 
-              <p className="mt-1 break-all text-xs text-[#68736D]">
-                {uploadedUrl}
+              <h2 className="mt-1 text-xl font-semibold text-[#17231D]">
+                Review your item
+              </h2>
+
+              <p className="mt-2 text-sm leading-6 text-[#68736D]">
+                Check the details below. You can correct anything Gemini
+                identified incorrectly.
               </p>
-            </div>
+
+              <div className="mt-6 grid gap-5 sm:grid-cols-2">
+                <label className="block sm:col-span-2">
+                  <span className="text-sm font-medium text-[#17231D]">
+                    Item name
+                  </span>
+                  <input
+                    value={details.name}
+                    onChange={(e) => updateDetail("name", e.target.value)}
+                    className="mt-2 w-full rounded-xl border border-[#D8DDD8] px-4 py-3 text-sm outline-none focus:border-[#315343]"
+                    required
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="text-sm font-medium text-[#17231D]">
+                    Category
+                  </span>
+                  <select
+                    value={details.category}
+                    onChange={(e) => updateDetail("category", e.target.value)}
+                    className="mt-2 w-full rounded-xl border border-[#D8DDD8] bg-white px-4 py-3 text-sm outline-none focus:border-[#315343]"
+                  >
+                    {categories.map((category) => (
+                      <option key={category} value={category}>
+                        {category.charAt(0).toUpperCase() + category.slice(1)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="block">
+                  <span className="text-sm font-medium text-[#17231D]">
+                    Item type
+                  </span>
+                  <input
+                    value={details.subcategory}
+                    onChange={(e) =>
+                      updateDetail("subcategory", e.target.value)
+                    }
+                    placeholder="e.g. polo, jeans, sneakers"
+                    className="mt-2 w-full rounded-xl border border-[#D8DDD8] px-4 py-3 text-sm outline-none focus:border-[#315343]"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="text-sm font-medium text-[#17231D]">
+                    Main colour
+                  </span>
+                  <input
+                    value={details.color}
+                    onChange={(e) => updateDetail("color", e.target.value)}
+                    className="mt-2 w-full rounded-xl border border-[#D8DDD8] px-4 py-3 text-sm outline-none focus:border-[#315343]"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="text-sm font-medium text-[#17231D]">
+                    Style
+                  </span>
+                  <input
+                    value={details.style}
+                    onChange={(e) => updateDetail("style", e.target.value)}
+                    placeholder="e.g. casual, formal, traditional"
+                    className="mt-2 w-full rounded-xl border border-[#D8DDD8] px-4 py-3 text-sm outline-none focus:border-[#315343]"
+                  />
+                </label>
+              </div>
+
+              <div className="mt-6 rounded-xl bg-[#EEF1EC] px-4 py-3">
+                <p className="text-sm font-medium text-[#173B2A]">
+                  Details ready for review
+                </p>
+                <p className="mt-1 text-xs leading-5 text-[#68736D]">
+                  Your photo has been uploaded. The next step is to connect this
+                  form to your authenticated MongoDB save endpoint.
+                </p>
+              </div>
+            </section>
+          )}
+
+          {uploadedUrl && (
+            <p className="mt-4 break-all text-xs text-[#8A938E]">
+              Image URL: {uploadedUrl}
+            </p>
           )}
         </div>
       </div>
