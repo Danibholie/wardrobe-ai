@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  experimental: {
+    turbopackFileSystemCacheForBuild: false,
+  },
   images: {
     remotePatterns: [
       {
@@ -16,4 +19,3 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
-
