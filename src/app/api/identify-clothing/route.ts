@@ -1,8 +1,18 @@
-
+import { auth } from "@/auth";
 import { identifyClothing } from "@/lib/ai";
 
 export async function POST(request: Request) {
   try {
+    const session = await auth();
+    const userId = session?.user?.id;
+
+    if (!userId) {
+      return Response.json(
+        { success: false, message: "Please sign in to identify clothing." },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const { imageUrl } = body;
 
@@ -42,22 +52,3 @@ export async function POST(request: Request) {
     );
   }
 }
-
-// https://res.cloudinary.com/dk3294qvk/image/upload/v1791645210/wardrobe-ai/pp96jguhif5jvxcwadds.jpg
-
-// fetch("/api/identify-clothing", {
-//   method: "POST",
-//   headers: {
-//     "Content-Type": "application/json",
-//   },
-//   body: JSON.stringify({
-//     imageUrl: "PASTE_YOUR_CLOUDINARY_IMAGE_URL_HERE",
-//   }),
-// })
-//   .then(async (response) => {
-//     const body = await response.text();
-
-//     console.log("HTTP status:", response.status);
-//     console.log("Response body:", body || "(empty response)");
-//   })
-//   .catch(console.error);

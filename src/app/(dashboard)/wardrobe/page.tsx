@@ -1,6 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import {
+  Plus,
+  Shirt,
+  Pencil,
+  Trash2,
+  X,
+  Loader2,
+  AlertCircle,
+  RotateCw,
+  ArrowLeft,
+} from "lucide-react";
 
 type WardrobeItem = {
   id: string;
@@ -197,6 +209,16 @@ export default function WardrobePage() {
   return (
     <main className="min-h-screen bg-[#F7F5F0] px-6 py-8">
       <div className="mx-auto max-w-6xl">
+        <div className="mb-4">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-[#68736D] hover:text-[#173B2A] transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Home</span>
+          </Link>
+        </div>
+
         <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
           <div>
             <p className="text-sm font-medium text-[#315343]">
@@ -212,12 +234,13 @@ export default function WardrobePage() {
             </p>
           </div>
 
-          <a
+          <Link
             href="/wardrobe/add"
-            className="self-start rounded-full bg-[#173B2A] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#24543D]"
+            className="self-start inline-flex items-center gap-2 rounded-full bg-[#173B2A] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#24543D] active:scale-[0.98] shadow-xs"
           >
-            + Add clothing
-          </a>
+            <Plus className="w-4 h-4" />
+            <span>Add clothing</span>
+          </Link>
         </div>
 
         {successMessage && (
@@ -243,7 +266,7 @@ export default function WardrobePage() {
             <button
               key={category.value}
               onClick={() => setActiveCategory(category.value)}
-              className={`whitespace-nowrap rounded-full px-5 py-2.5 text-sm font-medium transition ${
+              className={`whitespace-nowrap rounded-full px-5 py-2.5 text-sm font-medium transition cursor-pointer ${
                 activeCategory === category.value
                   ? "bg-[#173B2A] text-white"
                   : "bg-white text-[#68736D] ring-1 ring-black/5 hover:text-[#173B2A]"
@@ -255,11 +278,34 @@ export default function WardrobePage() {
         </div>
 
         {loading ? (
-          <section className="mt-8 rounded-3xl bg-white px-6 py-20 text-center shadow-sm">
-            <p className="text-sm text-[#68736D]">Loading your wardrobe...</p>
-          </section>
+          <div className="mt-8">
+            <div className="flex items-center gap-2 mb-4 text-sm text-[#68736D]">
+              <Loader2 className="w-4 h-4 animate-spin text-[#173B2A]" />
+              <span>Loading your wardrobe pieces...</span>
+            </div>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+              {Array.from({ length: 8 }).map((_, idx) => (
+                <div
+                  key={idx}
+                  className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5 animate-pulse"
+                >
+                  <div className="aspect-[4/5] w-full bg-[#EAE8E2]" />
+                  <div className="p-4 space-y-2.5">
+                    <div className="h-4 bg-[#EAE8E2] rounded-md w-3/4" />
+                    <div className="h-3 bg-[#EAE8E2] rounded-md w-1/2" />
+                    <div className="h-3 bg-[#EAE8E2] rounded-md w-1/3" />
+                    <div className="flex gap-2 pt-2">
+                      <div className="h-8 bg-[#EAE8E2] rounded-full flex-1" />
+                      <div className="h-8 bg-[#EAE8E2] rounded-full flex-1" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         ) : error ? (
           <section className="mt-8 rounded-3xl bg-white px-6 py-16 text-center shadow-sm">
+            <AlertCircle className="w-10 h-10 text-red-600 mx-auto mb-3" />
             <h2 className="text-xl font-semibold text-[#17231D]">
               We couldn&apos;t load your wardrobe
             </h2>
@@ -268,16 +314,17 @@ export default function WardrobePage() {
 
             <button
               onClick={() => window.location.reload()}
-              className="mt-5 rounded-full bg-[#173B2A] px-5 py-3 text-sm text-white"
+              className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#173B2A] px-5 py-3 text-sm text-white cursor-pointer hover:bg-[#24543D] transition"
             >
-              Try again
+              <RotateCw className="w-4 h-4" />
+              <span>Try again</span>
             </button>
           </section>
         ) : filteredItems.length === 0 ? (
           <section className="mt-8 flex min-h-80 items-center justify-center rounded-3xl bg-white px-6 py-16 text-center shadow-sm ring-1 ring-black/5">
             <div className="max-w-md">
-              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#EEF1EC] text-3xl">
-                👕
+              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#EEF1EC] text-[#173B2A]">
+                <Shirt className="w-10 h-10 stroke-[1.5]" />
               </div>
 
               <h2 className="mt-6 text-2xl font-semibold text-[#17231D]">
@@ -293,12 +340,13 @@ export default function WardrobePage() {
               </p>
 
               {items.length === 0 && (
-                <a
+                <Link
                   href="/wardrobe/add"
-                  className="mt-7 inline-flex rounded-full bg-[#173B2A] px-6 py-3 text-sm font-medium text-white transition hover:bg-[#24543D]"
+                  className="mt-7 inline-flex items-center gap-2 rounded-full bg-[#173B2A] px-6 py-3 text-sm font-medium text-white transition hover:bg-[#24543D] active:scale-[0.98]"
                 >
-                  Add your first item
-                </a>
+                  <Plus className="w-4 h-4" />
+                  <span>Add your first item</span>
+                </Link>
               )}
             </div>
           </section>
@@ -345,18 +393,29 @@ export default function WardrobePage() {
                       <button
                         type="button"
                         onClick={() => openEditForm(item)}
-                        className="flex-1 rounded-full border border-[#D8DED8] px-3 py-2 text-sm font-medium text-[#173B2A] transition hover:bg-[#EEF1EC]"
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-full border border-[#D8DED8] px-3 py-2 text-sm font-medium text-[#173B2A] transition hover:bg-[#EEF1EC] cursor-pointer"
                       >
-                        Edit
+                        <Pencil className="w-3.5 h-3.5" />
+                        <span>Edit</span>
                       </button>
 
                       <button
                         type="button"
                         onClick={() => handleDelete(item)}
                         disabled={deletingId === item.id}
-                        className="flex-1 rounded-full border border-red-200 px-3 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-full border border-red-200 px-3 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                       >
-                        {deletingId === item.id ? "Deleting..." : "Delete"}
+                        {deletingId === item.id ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            <span>Deleting...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Delete</span>
+                          </>
+                        )}
                       </button>
                     </div>
                   </div>
@@ -402,9 +461,9 @@ export default function WardrobePage() {
                 onClick={closeEditForm}
                 disabled={saving}
                 aria-label="Close edit form"
-                className="rounded-full px-3 py-2 text-xl text-[#68736D] hover:bg-white disabled:opacity-50"
+                className="rounded-full p-2 text-[#68736D] hover:bg-white hover:text-[#17231D] transition-colors disabled:opacity-50 cursor-pointer"
               >
-                ×
+                <X className="w-5 h-5" />
               </button>
             </div>
 
@@ -523,7 +582,7 @@ export default function WardrobePage() {
                   type="button"
                   onClick={closeEditForm}
                   disabled={saving}
-                  className="flex-1 rounded-full border border-[#D8DED8] bg-white px-5 py-3 text-sm font-medium text-[#173B2A] disabled:opacity-50"
+                  className="flex-1 rounded-full border border-[#D8DED8] bg-white px-5 py-3 text-sm font-medium text-[#173B2A] disabled:opacity-50 cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -531,9 +590,16 @@ export default function WardrobePage() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex-1 rounded-full bg-[#173B2A] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#24543D] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-full bg-[#173B2A] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#24543D] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                 >
-                  {saving ? "Saving changes..." : "Save changes"}
+                  {saving ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Saving changes...</span>
+                    </>
+                  ) : (
+                    <span>Save changes</span>
+                  )}
                 </button>
               </div>
             </form>

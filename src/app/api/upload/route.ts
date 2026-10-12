@@ -1,4 +1,5 @@
 import { v2 as cloudinary } from "cloudinary";
+import { auth } from "@/auth";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -8,6 +9,19 @@ cloudinary.config({
 
 export async function POST(request: Request) {
   try {
+    const session = await auth();
+    const userId = session?.user?.id;
+
+    if (!userId) {
+      return Response.json(
+        {
+          success: false,
+          message: "Please sign in to upload photos.",
+        },
+        { status: 401 }
+      );
+    }
+
     const formData = await request.formData();
 
     const file = formData.get("file");
@@ -47,7 +61,7 @@ export async function POST(request: Request) {
 
           resolve({
             secure_url: result.secure_url,
-            public_id: result.public_id,    
+            public_id: result.public_id,
           });
         }
       );

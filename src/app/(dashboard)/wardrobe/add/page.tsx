@@ -1,6 +1,16 @@
 "use client";
 
 import { ChangeEvent, useEffect, useState } from "react";
+import Link from "next/link";
+import {
+  ArrowLeft,
+  UploadCloud,
+  Sparkles,
+  Loader2,
+  Check,
+  AlertCircle,
+  RefreshCw,
+} from "lucide-react";
 
 type ClothingDetails = {
   name: string;
@@ -196,12 +206,13 @@ export default function AddClothingPage() {
   return (
     <main className="min-h-screen bg-[#F7F5F0] px-6 py-8">
       <div className="mx-auto max-w-2xl">
-        <a
+        <Link
           href="/wardrobe"
-          className="text-sm font-medium text-[#68736D] hover:text-[#173B2A]"
+          className="inline-flex items-center gap-2 text-sm font-medium text-[#68736D] hover:text-[#173B2A] transition-colors"
         >
-          ← Back to wardrobe
-        </a>
+          <ArrowLeft className="w-4 h-4" />
+          <span>Back to wardrobe</span>
+        </Link>
 
         <div className="mt-8">
           <p className="text-sm font-medium text-[#315343]">
@@ -220,9 +231,9 @@ export default function AddClothingPage() {
 
         <div className="mt-8 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-black/5">
           {!previewUrl ? (
-            <label className="flex min-h-90 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#D8DDD8] px-6 text-center transition hover:border-[#315343]">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#EEF1EC] text-2xl">
-                +
+            <label className="flex min-h-90 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[#D8DDD8] px-6 text-center transition hover:border-[#315343] group">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#EEF1EC] text-[#173B2A] transition group-hover:scale-105">
+                <UploadCloud className="w-8 h-8" />
               </div>
 
               <h2 className="mt-5 text-lg font-semibold text-[#17231D]">
@@ -234,8 +245,9 @@ export default function AddClothingPage() {
                 best.
               </p>
 
-              <span className="mt-6 rounded-full bg-[#173B2A] px-6 py-3 text-sm font-medium text-white">
-                Choose photo
+              <span className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#173B2A] px-6 py-3 text-sm font-medium text-white transition group-hover:bg-[#24543D]">
+                <UploadCloud className="w-4 h-4" />
+                <span>Choose photo</span>
               </span>
 
               <p className="mt-4 text-xs text-[#8A938E]">
@@ -251,12 +263,33 @@ export default function AddClothingPage() {
             </label>
           ) : (
             <>
-              <div className="overflow-hidden rounded-2xl bg-[#F7F5F0]">
+              <div className="overflow-hidden rounded-2xl bg-[#F7F5F0] relative">
                 <img
                   src={previewUrl}
                   alt="Selected clothing"
                   className="mx-auto max-h-125 w-full object-contain"
                 />
+
+                {(uploading || identifying) && (
+                  <div className="absolute inset-0 bg-[#173B2A]/60 backdrop-blur-xs flex flex-col items-center justify-center text-white p-6 text-center">
+                    {uploading ? (
+                      <>
+                        <Loader2 className="w-10 h-10 animate-spin text-white mb-3" />
+                        <p className="text-base font-semibold">Uploading photo securely...</p>
+                        <p className="text-xs text-white/80 mt-1">Preparing image for AI analysis</p>
+                      </>
+                    ) : (
+                      <>
+                        <div className="relative mb-3 flex items-center justify-center">
+                          <Loader2 className="w-12 h-12 animate-spin text-white opacity-40" />
+                          <Sparkles className="w-6 h-6 text-secondary-container absolute inset-0 m-auto animate-pulse" />
+                        </div>
+                        <p className="text-base font-semibold">AI analysing garment...</p>
+                        <p className="text-xs text-white/80 mt-1">Detecting category, main colour &amp; Nigerian styling</p>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="mt-5 flex flex-col gap-3 sm:flex-row">
@@ -264,49 +297,72 @@ export default function AddClothingPage() {
                   type="button"
                   onClick={resetSelection}
                   disabled={uploading || identifying}
-                  className="rounded-full border border-[#D8DDD8] px-6 py-3 text-sm font-medium text-[#315343] disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-[#D8DDD8] px-6 py-3 text-sm font-medium text-[#315343] hover:bg-[#F7F5F0] transition disabled:opacity-50 cursor-pointer"
                 >
-                  Choose another
+                  <RefreshCw className="w-4 h-4" />
+                  <span>Choose another</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={handleUploadAndIdentify}
                   disabled={uploading || identifying || !!details}
-                  className="rounded-full bg-[#173B2A] px-6 py-3 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-[#173B2A] px-6 py-3 text-sm font-medium text-white transition hover:bg-[#24543D] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
                 >
-                  {uploading
-                    ? "Uploading photo..."
-                    : identifying
-                      ? "Identifying clothing..."
-                      : details
-                        ? "Identification complete"
-                        : uploadedUrl
-                          ? "Retry identification"
-                          : "Upload and identify"}
+                  {uploading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Uploading photo...</span>
+                    </>
+                  ) : identifying ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Identifying clothing...</span>
+                    </>
+                  ) : details ? (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>Identification complete</span>
+                    </>
+                  ) : uploadedUrl ? (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      <span>Retry identification</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      <span>Upload and identify</span>
+                    </>
+                  )}
                 </button>
               </div>
             </>
           )}
 
           {(uploading || identifying) && (
-            <p className="mt-5 text-sm text-[#68736D]">
-              {uploading
-                ? "Uploading your photo securely..."
-                : "Analysing the visible clothing details..."}
+            <p className="mt-5 inline-flex items-center gap-2 text-sm text-[#68736D]">
+              <Loader2 className="w-4 h-4 animate-spin text-[#173B2A]" />
+              <span>
+                {uploading
+                  ? "Uploading your photo securely..."
+                  : "Analysing the visible clothing details with AI..."}
+              </span>
             </p>
           )}
 
           {error && (
-            <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
-              {error}
+            <div className="mt-4 inline-flex items-center gap-2 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 w-full">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <span>{error}</span>
             </div>
           )}
 
           {details && (
             <section className="mt-8 border-t border-[#E7E9E4] pt-6">
-              <p className="text-sm font-medium text-[#315343]">
-                AI identification
+              <p className="inline-flex items-center gap-1.5 text-sm font-medium text-[#315343]">
+                <Sparkles className="w-4 h-4" />
+                <span>AI identification</span>
               </p>
 
               <h2 className="mt-1 text-xl font-semibold text-[#17231D]">
@@ -321,7 +377,7 @@ export default function AddClothingPage() {
               <div className="mt-6 grid gap-5 sm:grid-cols-2">
                 <label className="block sm:col-span-2">
                   <span className="text-sm font-medium text-[#17231D]">
-                    Item name
+                    Item name *
                   </span>
                   <input
                     value={details.name}
@@ -333,7 +389,7 @@ export default function AddClothingPage() {
 
                 <label className="block">
                   <span className="text-sm font-medium text-[#17231D]">
-                    Category
+                    Category *
                   </span>
                   <select
                     value={details.category}
@@ -364,12 +420,13 @@ export default function AddClothingPage() {
 
                 <label className="block">
                   <span className="text-sm font-medium text-[#17231D]">
-                    Main colour
+                    Main colour *
                   </span>
                   <input
                     value={details.color}
                     onChange={(e) => updateDetail("color", e.target.value)}
                     className="mt-2 w-full rounded-xl border border-[#D8DDD8] px-4 py-3 text-sm outline-none focus:border-[#315343]"
+                    required
                   />
                 </label>
 
@@ -387,8 +444,9 @@ export default function AddClothingPage() {
               </div>
 
               <div className="mt-6 rounded-xl bg-[#EEF1EC] px-4 py-3">
-                <p className="text-sm font-medium text-[#173B2A]">
-                  Details ready for review
+                <p className="inline-flex items-center gap-1.5 text-sm font-medium text-[#173B2A]">
+                  <Check className="w-4 h-4 text-[#173B2A]" />
+                  <span>Details ready for review</span>
                 </p>
                 <p className="mt-1 text-xs leading-5 text-[#68736D]">
                   Your photo has been uploaded. The next step is to save to
@@ -400,9 +458,19 @@ export default function AddClothingPage() {
                 type="button"
                 onClick={handleSaveToWardrobe}
                 disabled={saving || uploading || identifying}
-                className="mt-5 w-full rounded-full bg-[#173B2A] px-6 py-3 text-sm font-medium text-white transition hover:bg-[#24543D] disabled:cursor-not-allowed disabled:opacity-50"
+                className="mt-5 w-full inline-flex items-center justify-center gap-2 rounded-full bg-[#173B2A] px-6 py-3 text-sm font-medium text-white transition hover:bg-[#24543D] disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer shadow-xs"
               >
-                {saving ? "Saving to wardrobe..." : "Save to Wardrobe"}
+                {saving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Saving to wardrobe...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4" />
+                    <span>Save to Wardrobe</span>
+                  </>
+                )}
               </button>
             </section>
           )}

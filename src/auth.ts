@@ -13,6 +13,33 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
 
   callbacks: {
+    authorized({ auth, request: { nextUrl } }) {
+      const isLoggedIn = !!auth?.user;
+      const { pathname } = nextUrl;
+
+      // Block unauthenticated access to protected API endpoints
+      if (
+        pathname.startsWith("/api/wardrobe") ||
+        pathname.startsWith("/api/upload") ||
+        pathname.startsWith("/api/identify-clothing")
+      ) {
+        if (!isLoggedIn) {
+          return Response.json(
+            { success: false, message: "Unauthorized. Please sign in." },
+            { status: 401 }
+          );
+        }
+        return true;
+      }
+
+      // Block unauthenticated access to wardrobe pages
+      if (pathname.startsWith("/wardrobe")) {
+        return isLoggedIn;
+      }
+
+      return true;
+    },
+
     async jwt({ token, user }) {
       if (user?.email) {
         await connectDB();
