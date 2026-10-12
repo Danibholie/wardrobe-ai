@@ -34,8 +34,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         return true;
       }
 
-      // Block unauthenticated access to wardrobe and home pages
-      if (pathname.startsWith("/wardrobe") || pathname.startsWith("/home")) {
+      // Block unauthenticated access to wardrobe, plan, and home pages
+      if (
+        pathname.startsWith("/wardrobe") ||
+        pathname.startsWith("/home") ||
+        pathname.startsWith("/plan")
+      ) {
         return isLoggedIn;
       }
       return true;

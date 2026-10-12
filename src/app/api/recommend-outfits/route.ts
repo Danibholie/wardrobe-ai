@@ -31,17 +31,38 @@ export async function POST(request: Request) {
     const event =
       typeof body.event === "string" && body.event.trim()
         ? body.event.trim()
+        : typeof body.occasion === "string" && body.occasion.trim()
+        ? body.occasion.trim()
         : "Smart Casual / Day Outing";
+
+    const timeOfDay =
+      typeof body.timeOfDay === "string" && body.timeOfDay.trim()
+        ? body.timeOfDay.trim()
+        : "";
+
+    const notes =
+      typeof body.notes === "string" && body.notes.trim()
+        ? body.notes.trim()
+        : "";
+
+    const effectiveEvent = timeOfDay ? `${event} (${timeOfDay})` : event;
 
     const stylePreference =
       typeof body.stylePreference === "string" && body.stylePreference.trim()
         ? body.stylePreference.trim()
+        : typeof body.style === "string" && body.style.trim()
+        ? body.style.trim()
         : "Smart Casual";
 
-    const vibe =
+    const baseVibe =
       typeof body.vibe === "string" && body.vibe.trim()
         ? body.vibe.trim()
-        : "Breathable, elegant, and comfortable";
+        : stylePreference;
+
+    const contextualVibeParts = [baseVibe];
+    if (notes) {
+      contextualVibeParts.push(`User notes/outing details: "${notes}"`);
+    }
 
     const anchorItemId =
       typeof body.anchorItemId === "string" && body.anchorItemId.trim()
@@ -76,13 +97,14 @@ export async function POST(request: Request) {
       imageUrl: item.imageUrl,
     }));
 
-    let contextualVibe = vibe;
     if (anchorItemId) {
       const anchorItem = userItems.find(
         (it) => it._id.toString() === anchorItemId
       );
       if (anchorItem) {
-        contextualVibe += `. Anchor Piece to build around: Must include item ID ${anchorItemId} ("${anchorItem.name}", ${anchorItem.color} ${anchorItem.category}).`;
+        contextualVibeParts.push(
+          `Anchor Piece to build around: Must include item ID ${anchorItemId} ("${anchorItem.name}", ${anchorItem.color} ${anchorItem.category}).`
+        );
       }
     }
 
@@ -90,26 +112,31 @@ export async function POST(request: Request) {
       items: wardrobeSummaries,
       location,
       weather,
-      event,
+      event: effectiveEvent,
       stylePreference,
-      vibe: contextualVibe,
+      vibe: contextualVibeParts.join(". "),
     });
 
+    // CRITICAL SERVER-SIDE ENFORCEMENT:
+    // Only items authentically belonging to the user's database can be returned.
     const itemMap = new Map(
       wardrobeSummaries.map((it) => [it.id, it])
     );
 
-    const enrichedOutfits = recommendation.outfits.map((outfit) => {
-      // Map item IDs to the full item summary
-      const itemsMatched = outfit.itemIds
-        .map((id) => itemMap.get(id))
-        .filter(Boolean) as WardrobeItemSummary[];
+    const enrichedOutfits = recommendation.outfits
+      .map((outfit) => {
+        // Enforce that every single item belongs to the user
+        const itemsMatched = outfit.itemIds
+          .map((id) => itemMap.get(id))
+          .filter(Boolean) as WardrobeItemSummary[];
 
-      return {
-        ...outfit,
-        items: itemsMatched,
-      };
-    });
+        return {
+          ...outfit,
+          itemIds: itemsMatched.map((i) => i.id),
+          items: itemsMatched,
+        };
+      })
+      .filter((outfit) => outfit.items.length > 0);
 
     return NextResponse.json({
       success: true,
@@ -120,7 +147,7 @@ export async function POST(request: Request) {
         weather,
         event,
         stylePreference,
-        vibe,
+        vibe: baseVibe,
       },
     });
   } catch (error) {

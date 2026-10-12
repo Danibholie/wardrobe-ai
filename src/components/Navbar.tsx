@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Shirt, Plus, Home as HomeIcon, Menu, X, Sparkles } from "lucide-react";
+import { Shirt, Plus, Home as HomeIcon, Menu, X, Sparkles, Calendar } from "lucide-react";
 import { SignOutButton } from "@/app/SignOutButton";
 
 export type NavbarUser = {
@@ -32,6 +32,11 @@ export function Navbar({ user }: NavbarProps) {
       label: "Wardrobe",
       href: "/wardrobe",
       active: pathname === "/wardrobe",
+    },
+    {
+      label: "Plan",
+      href: "/plan",
+      active: pathname === "/plan",
     },
     {
       label: "Saved",
@@ -153,6 +158,7 @@ export function Navbar({ user }: NavbarProps) {
             >
               {link.label === "Home" && <HomeIcon className="w-4 h-4" />}
               {link.label === "Wardrobe" && <Shirt className="w-4 h-4" />}
+              {link.label === "Plan" && <Calendar className="w-4 h-4" />}
               {link.label === "Saved" && <Sparkles className="w-4 h-4" />}
               <span>{link.label}</span>
             </Link>

@@ -136,9 +136,8 @@ export default function DashboardHomePage() {
   function handlePlanClick() {
     setPlanningActive(true);
     setTimeout(() => {
-      setPlanningActive(false);
-      setStylistOpen(true);
-    }, 400);
+      window.location.href = `/plan?occasion=${encodeURIComponent(selectedOccasion.label)}`;
+    }, 200);
   }
 
   function handleItemClick(itemId: string) {
