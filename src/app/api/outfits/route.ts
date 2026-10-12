@@ -41,6 +41,8 @@ export async function GET() {
       weather: outfit.weather || "",
       stylingTips: outfit.stylingTips || [],
       missingPiecesAdvice: outfit.missingPiecesAdvice || "",
+      wearCount: (outfit as any).wearCount || 0,
+      lastWorn: (outfit as any).lastWorn || null,
       createdAt: outfit.createdAt,
       items: (Array.isArray(outfit.itemIds) ? outfit.itemIds : [])
         .filter((item: any) => item && typeof item === "object" && "_id" in item)
