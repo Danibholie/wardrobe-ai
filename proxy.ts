@@ -6,5 +6,7 @@ export const config = {
     "/api/wardrobe/:path*",
     "/api/upload/:path*",
     "/api/identify-clothing/:path*",
+    "/api/recommend-outfits/:path*",
+    "/api/outfits/:path*",
   ],
 };

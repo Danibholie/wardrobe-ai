@@ -21,7 +21,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (
         pathname.startsWith("/api/wardrobe") ||
         pathname.startsWith("/api/upload") ||
-        pathname.startsWith("/api/identify-clothing")
+        pathname.startsWith("/api/identify-clothing") ||
+        pathname.startsWith("/api/recommend-outfits") ||
+        pathname.startsWith("/api/outfits")
       ) {
         if (!isLoggedIn) {
           return Response.json(

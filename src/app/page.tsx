@@ -32,6 +32,13 @@ export default async function Home() {
 
           <div className="flex items-center gap-3">
             <Link
+              href="/wardrobe/saved"
+              className="hidden sm:inline-flex items-center gap-1.5 text-body-sm font-semibold text-primary hover:text-secondary transition-colors"
+            >
+              <Sparkles className="w-4 h-4 text-secondary" />
+              <span>Saved Looks</span>
+            </Link>
+            <Link
               href="/wardrobe"
               className="inline-flex items-center gap-1.5 text-body-sm font-semibold text-primary hover:text-secondary transition-colors"
             >
@@ -106,14 +113,24 @@ export default async function Home() {
           <section className="w-full flex flex-col items-center text-center mt-space-lg space-y-space-md">
             <div className="w-full sm:w-auto flex flex-col sm:flex-row items-center gap-space-sm justify-center">
               {user ? (
-                <Link
-                  href="/wardrobe"
-                  className="w-full sm:w-72 h-12 px-space-xl bg-primary text-on-primary font-title-md text-title-md rounded-xl shadow-md transition-all duration-300 hover:bg-primary-container hover:shadow-lg active:scale-[0.99] flex items-center justify-center gap-2 group cursor-pointer"
-                  id="btn-onboard"
-                >
-                  <span>Open my wardrobe</span>
-                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                </Link>
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                  <Link
+                    href="/wardrobe?stylist=open"
+                    className="w-full sm:w-64 h-12 px-space-lg bg-primary text-on-primary font-title-md text-title-md rounded-xl shadow-md transition-all duration-300 hover:bg-primary-container hover:shadow-lg active:scale-[0.99] flex items-center justify-center gap-2 group cursor-pointer"
+                    id="btn-recommend-home"
+                  >
+                    <Sparkles className="w-4 h-4 text-secondary" />
+                    <span>Style an outfit</span>
+                  </Link>
+                  <Link
+                    href="/wardrobe"
+                    className="w-full sm:w-64 h-12 px-space-lg bg-surface-container-high text-on-surface font-title-md text-title-md rounded-xl shadow-xs transition-all duration-300 hover:bg-surface-container-highest border border-outline-variant/30 flex items-center justify-center gap-2 group cursor-pointer"
+                    id="btn-onboard"
+                  >
+                    <span>My wardrobe</span>
+                    <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  </Link>
+                </div>
               ) : (
                 <Link
                   href="/signin?callbackUrl=/wardrobe"

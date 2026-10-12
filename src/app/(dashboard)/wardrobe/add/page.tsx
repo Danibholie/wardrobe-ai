@@ -204,7 +204,7 @@ export default function AddClothingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#F7F5F0] px-6 py-8">
+    <main className="min-h-screen bg-[#F7F5F0] px-6 pt-24 pb-12">
       <div className="mx-auto max-w-2xl">
         <Link
           href="/wardrobe"
