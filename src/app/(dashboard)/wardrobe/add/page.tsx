@@ -28,6 +28,7 @@ export default function AddClothingPage() {
   const [identifying, setIdentifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [details, setDetails] = useState<ClothingDetails | null>(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     return () => {
@@ -60,37 +61,46 @@ export default function AddClothingPage() {
   }
 
   async function handleUploadAndIdentify() {
-    if (!image) {
+    if (!image && !uploadedUrl) {
       setError("Please choose a photo first.");
       return;
     }
 
-    setUploading(true);
     setError(null);
     setDetails(null);
-    setUploadedUrl(null);
+
+    let imageUrl = uploadedUrl;
 
     try {
-      // Step 1: Upload the photo to Cloudinary.
-      const formData = new FormData();
-      formData.append("file", image);
+      if (!imageUrl) {
+        if (!image) {
+          setError("Please choose a photo first.");
+          return;
+        }
 
-      const uploadResponse = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
+        setUploading(true);
 
-      const uploadData = await uploadResponse.json();
+        // Step 1: Upload the photo to Cloudinary.
+        const formData = new FormData();
+        formData.append("file", image);
 
-      if (!uploadResponse.ok || !uploadData.success || !uploadData.imageUrl) {
-        throw new Error(uploadData.message || "Photo upload failed.");
+        const uploadResponse = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        const uploadData = await uploadResponse.json();
+
+        if (!uploadResponse.ok || !uploadData.success || !uploadData.imageUrl) {
+          throw new Error(uploadData.message || "Photo upload failed.");
+        }
+
+        imageUrl = uploadData.imageUrl;
+        setUploadedUrl(imageUrl);
+        setUploading(false);
       }
 
-      const imageUrl: string = uploadData.imageUrl;
-      setUploadedUrl(imageUrl);
-
       // Step 2: Ask Gemini to identify the clothing.
-      setUploading(false);
       setIdentifying(true);
 
       const identifyResponse = await fetch("/api/identify-clothing", {
@@ -116,14 +126,62 @@ export default function AddClothingPage() {
       });
     } catch (err) {
       console.error("Upload or identification error:", err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Something went wrong. Please try again.",
-      );
+      let errorMsg = "Something went wrong. Please try again.";
+      if (err instanceof Error) {
+        try {
+          const parsed = JSON.parse(err.message);
+          errorMsg = parsed?.error?.message || err.message;
+        } catch {
+          errorMsg = err.message;
+        }
+      }
+      setError(errorMsg);
     } finally {
       setUploading(false);
       setIdentifying(false);
+    }
+  }
+
+  async function handleSaveToWardrobe() {
+    if (!details || !uploadedUrl) {
+      setError("Upload and identify a clothing photo first.");
+      return;
+    }
+
+    if (!details.name.trim() || !details.category || !details.color.trim()) {
+      setError("Please provide the item name, category, and colour.");
+      return;
+    }
+
+    setSaving(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/wardrobe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...details,
+          imageUrl: uploadedUrl,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Could not save this item.");
+      }
+
+      window.location.href = "/wardrobe";
+    } catch (err) {
+      console.error("Save clothing error:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong while saving.",
+      );
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -155,7 +213,7 @@ export default function AddClothingPage() {
           </h1>
 
           <p className="mt-2 text-sm leading-6 text-[#68736D]">
-            Upload a clear photo of one item. Gemini will identify it, and you
+            Upload a clear photo of one item. Our AI will identify it, and you
             can review the details before saving it.
           </p>
         </div>
@@ -223,7 +281,9 @@ export default function AddClothingPage() {
                       ? "Identifying clothing..."
                       : details
                         ? "Identification complete"
-                        : "Upload and identify"}
+                        : uploadedUrl
+                          ? "Retry identification"
+                          : "Upload and identify"}
                 </button>
               </div>
             </>
@@ -233,7 +293,7 @@ export default function AddClothingPage() {
             <p className="mt-5 text-sm text-[#68736D]">
               {uploading
                 ? "Uploading your photo securely..."
-                : "Gemini is analysing the visible clothing details..."}
+                : "Analysing the visible clothing details..."}
             </p>
           )}
 
@@ -331,10 +391,19 @@ export default function AddClothingPage() {
                   Details ready for review
                 </p>
                 <p className="mt-1 text-xs leading-5 text-[#68736D]">
-                  Your photo has been uploaded. The next step is to connect this
-                  form to your authenticated MongoDB save endpoint.
+                  Your photo has been uploaded. The next step is to save to
+                  wardrobe.
                 </p>
               </div>
+
+              <button
+                type="button"
+                onClick={handleSaveToWardrobe}
+                disabled={saving || uploading || identifying}
+                className="mt-5 w-full rounded-full bg-[#173B2A] px-6 py-3 text-sm font-medium text-white transition hover:bg-[#24543D] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {saving ? "Saving to wardrobe..." : "Save to Wardrobe"}
+              </button>
             </section>
           )}
 

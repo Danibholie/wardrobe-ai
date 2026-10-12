@@ -19,13 +19,24 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Clothing identification error:", error);
 
+    let message = "An error occurred while identifying clothing.";
+    if (error instanceof Error) {
+      try {
+        const parsed = JSON.parse(error.message);
+        if (parsed?.error?.message) {
+          message = parsed.error.message;
+        } else {
+          message = error.message;
+        }
+      } catch {
+        message = error.message;
+      }
+    }
+
     return Response.json(
       {
         success: false,
-        message:
-          error instanceof Error
-            ? error.message
-            : "An unknown error occurred.",
+        message,
       },
       { status: 500 }
     );
@@ -43,8 +54,10 @@ export async function POST(request: Request) {
 //     imageUrl: "PASTE_YOUR_CLOUDINARY_IMAGE_URL_HERE",
 //   }),
 // })
-//   .then(async (response) => ({
-//     status: response.status,
-//     data: await response.json(),
-//   }))
-//   .then(console.log);
+//   .then(async (response) => {
+//     const body = await response.text();
+
+//     console.log("HTTP status:", response.status);
+//     console.log("Response body:", body || "(empty response)");
+//   })
+//   .catch(console.error);

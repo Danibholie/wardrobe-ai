@@ -8,6 +8,12 @@ function getAI() {
   return new GoogleGenAI({ apiKey });
 }
 
+const CANDIDATE_MODELS = [
+  "gemini-3.5-flash",
+  "gemini-flash-latest",
+  "gemini-3.8-flash",
+];
+
 const clothingSchema = {
   type: Type.OBJECT,
   properties: {
@@ -17,6 +23,15 @@ const clothingSchema = {
     },
     category: {
       type: Type.STRING,
+      enum: [
+        "tops",
+        "bottoms",
+        "dresses",
+        "outerwear",
+        "shoes",
+        "accessories",
+        "traditional",
+      ],
       description:
         "One of: tops, bottoms, dresses, outerwear, shoes, accessories, traditional.",
     },
@@ -53,17 +68,21 @@ export async function identifyClothing(imageUrl: string) {
   const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
 
   const ai = getAI();
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: [
-      {
-        role: "user",
-        parts: [
-          {
-            text: `Identify the main clothing item in this image.
+  let lastError: unknown = null;
 
-Return its visible attributes only. Do not invent a brand, fabric,
-material, or other details that cannot be determined visually.
+  for (const model of CANDIDATE_MODELS) {
+    try {
+      const response = await ai.models.generateContent({
+        model,
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                text: `Identify the main clothing item in this image.
+
+                Return its visible attributes only. Do not invent a brand, fabric,
+                material, or other details that cannot be determined visually.
 
                 Use one category from:
                 tops, bottoms, dresses, outerwear, shoes, accessories, traditional.
@@ -94,28 +113,40 @@ material, or other details that cannot be determined visually.
                 agbada, senator, kaftan, ankara, aso-ebi.
                 - Keep the values concise.
 `,
-          },
-          {
-            inlineData: {
-              mimeType: contentType.split(";")[0],
-              data: imageBuffer.toString("base64"),
-            },
+              },
+              {
+                inlineData: {
+                  mimeType: contentType.split(";")[0],
+                  data: imageBuffer.toString("base64"),
+                },
+              },
+            ],
           },
         ],
-      },
-    ],
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: clothingSchema,
-      temperature: 0.1,
-    },
-  });
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: clothingSchema,
+          temperature: 0.1,
+        },
+      });
 
-  const text = response.text;
+      const text = response.text;
 
-  if (!text) {
-    throw new Error("Gemini returned an empty response.");
+      if (!text) {
+        throw new Error("Gemini returned an empty response.");
+      }
+
+      return JSON.parse(text);
+    } catch (err) {
+      console.warn(`Model ${model} failed, trying next candidate:`, err);
+      lastError = err;
+    }
   }
 
-  return JSON.parse(text);
+  throw (
+    lastError ??
+    new Error(
+      "AI models are currently experiencing high demand. Please try again in a few moments."
+    )
+  );
 }
