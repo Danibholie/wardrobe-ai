@@ -137,7 +137,7 @@ export default function AddClothingPage() {
 
       if (!identifyResponse.ok || !identifyData.success) {
         throw new Error(
-          identifyData.message || "Could not identify this clothing item."
+          identifyData.message || "Could not identify this clothing item.",
         );
       }
 
@@ -180,7 +180,7 @@ export default function AddClothingPage() {
 
   function updateDetail(field: keyof ClothingDetails, value: string) {
     setDetails((current) =>
-      current ? { ...current, [field]: value } : current
+      current ? { ...current, [field]: value } : current,
     );
   }
 
@@ -228,7 +228,9 @@ export default function AddClothingPage() {
     } catch (err) {
       console.error("Save clothing error:", err);
       setError(
-        err instanceof Error ? err.message : "Something went wrong while saving."
+        err instanceof Error
+          ? err.message
+          : "Something went wrong while saving.",
       );
     } finally {
       setSaving(false);
@@ -257,7 +259,9 @@ export default function AddClothingPage() {
     }
   }
 
-  const currentColorHex = details?.color ? getColorHex(details.color) : "#c3c8c2";
+  const currentColorHex = details?.color
+    ? getColorHex(details.color)
+    : "#c3c8c2";
 
   return (
     <main className="w-full pt-20 pb-20 md:pb-12 bg-background min-h-screen">
@@ -287,17 +291,18 @@ export default function AddClothingPage() {
                 Add clothing
               </h1>
               <p className="font-body-md text-body-md text-on-surface-variant mt-1 max-w-xl">
-                Take a quick photo or upload. AI detects the item details automatically.
+                Take a quick photo or upload. AI detects the item details
+                automatically.
               </p>
             </div>
 
-            {/* Quick Meta Pill */}
+            {/* Quick Meta Pill
             <div className="inline-flex items-center gap-2 bg-surface-container-high px-3 py-1.5 rounded-full self-start md:self-auto shadow-2xs">
               <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
               <span className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest font-semibold">
-                Neural Vision v4.2
+                Powered by Gemini AI
               </span>
-            </div>
+            </div> */}
           </div>
 
           {/* Feedback Error Alert */}
@@ -337,7 +342,8 @@ export default function AddClothingPage() {
                     </h3>
 
                     <p className="mt-1.5 max-w-sm font-body-sm text-body-sm text-on-surface-variant">
-                      Choose a clear photo showing one item. A plain background works best.
+                      Choose a clear photo showing one item. A plain background
+                      works best.
                     </p>
 
                     <span className="mt-5 inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 font-title-md text-title-md text-on-primary group-hover:bg-primary-container transition-all shadow-xs">
@@ -446,7 +452,8 @@ export default function AddClothingPage() {
                                 AI analysing garment...
                               </p>
                               <p className="font-body-sm text-body-sm text-on-primary/80 mt-1">
-                                Detecting category, main colour &amp; Nigerian styling
+                                Detecting category, main colour &amp; Nigerian
+                                styling
                               </p>
                             </>
                           )}
@@ -509,19 +516,6 @@ export default function AddClothingPage() {
                   </>
                 )}
               </div>
-
-              {/* Sustainability & Care Hint Card */}
-              <div className="bg-surface-container-low p-space-md rounded-xl flex items-start gap-space-sm border border-outline-variant/15">
-                <Leaf className="w-5 h-5 text-secondary flex-shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <h4 className="font-label-caps text-label-caps text-on-surface uppercase tracking-wider font-bold">
-                    Wardrobe Lifecycle Insight
-                  </h4>
-                  <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
-                    Breathable tailoring and open weaves. Hand washing or cold cycles preserves collar structure and reduces fiber wear in tropical Nigerian climate.
-                  </p>
-                </div>
-              </div>
             </div>
 
             {/* RIGHT PANEL: AI-Suggested Editable Form Elements */}
@@ -547,7 +541,8 @@ export default function AddClothingPage() {
                       No garment selected yet
                     </h4>
                     <p className="font-body-sm text-body-sm text-on-surface-variant max-w-sm mx-auto">
-                      Upload a photo on the left. The studio vision engine will automatically detect and populate the garment attributes.
+                      Upload a photo on the left. The studio vision engine will
+                      automatically detect and populate the garment attributes.
                     </p>
                     <button
                       type="button"
@@ -599,7 +594,9 @@ export default function AddClothingPage() {
                             <button
                               key={cat.value}
                               type="button"
-                              onClick={() => updateDetail("category", cat.value)}
+                              onClick={() =>
+                                updateDetail("category", cat.value)
+                              }
                               className={`h-8 px-3 rounded-full font-label-md text-label-md transition-all cursor-pointer flex items-center gap-1.5 ${
                                 isSelected
                                   ? "bg-primary-container text-on-primary shadow-xs font-semibold"
@@ -645,7 +642,9 @@ export default function AddClothingPage() {
                             required
                             maxLength={50}
                             value={details?.color || ""}
-                            onChange={(e) => updateDetail("color", e.target.value)}
+                            onChange={(e) =>
+                              updateDetail("color", e.target.value)
+                            }
                             placeholder="e.g. White, Navy, Olive, Burgundy"
                             className="w-full bg-transparent font-body-md text-body-md text-on-surface outline-none"
                           />
@@ -664,7 +663,9 @@ export default function AddClothingPage() {
                       <div className="relative">
                         <select
                           value={details?.style || STYLE_OPTIONS[0]}
-                          onChange={(e) => updateDetail("style", e.target.value)}
+                          onChange={(e) =>
+                            updateDetail("style", e.target.value)
+                          }
                           className="w-full h-12 bg-surface rounded-lg px-space-md font-body-md text-body-md text-on-surface focus:outline-none appearance-none cursor-pointer shadow-inner border border-outline-variant/20"
                         >
                           {STYLE_OPTIONS.map((opt) => (
@@ -681,7 +682,9 @@ export default function AddClothingPage() {
                     <div className="flex flex-col sm:flex-row items-center gap-space-sm pt-space-sm mt-space-xs">
                       <button
                         type="submit"
-                        disabled={saving || uploading || identifying || !uploadedUrl}
+                        disabled={
+                          saving || uploading || identifying || !uploadedUrl
+                        }
                         className="w-full sm:flex-1 h-12 bg-primary text-on-primary rounded-lg font-title-md text-title-md flex items-center justify-center gap-2 hover:bg-primary-container transition-all shadow-md active:scale-[0.99] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {saving ? (
@@ -726,7 +729,8 @@ export default function AddClothingPage() {
                 <div className="flex items-center gap-2">
                   <Lock className="w-4 h-4 text-outline shrink-0" />
                   <span className="font-body-sm text-body-sm">
-                    Your private closet photos are encrypted &amp; never publicly indexed
+                    Your private closet photos are encrypted &amp; never
+                    publicly indexed
                   </span>
                 </div>
                 <span className="font-label-caps text-label-caps text-outline uppercase font-semibold">

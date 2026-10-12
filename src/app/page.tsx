@@ -1,62 +1,17 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, ShieldCheck, Sparkles, Shirt } from "lucide-react";
-import { auth, signOut } from "@/auth";
-import { SignOutButton } from "./SignOutButton";
+import { redirect } from "next/navigation";
+import { ArrowRight, ShieldCheck } from "lucide-react";
+import { auth } from "@/auth";
 
 export default async function Home() {
   const session = await auth();
-  const user = session?.user;
+  if (session?.user) {
+    redirect("/home");
+  }
 
   return (
     <main className="w-full min-h-screen flex flex-col items-center justify-center p-margin-mobile md:p-margin relative">
-      {/* Top Navigation for Authenticated User */}
-      {user && (
-        <div className="w-full max-w-4xl mx-auto flex items-center justify-between py-3 px-4 mb-4 rounded-2xl bg-surface-container-low/70 backdrop-blur-md border border-outline-variant/30 text-on-surface">
-          <div className="flex items-center gap-2.5">
-            {user.image ? (
-              <img
-                src={user.image}
-                alt={user.name || "User"}
-                className="w-8 h-8 rounded-full border border-secondary/30 object-cover"
-              />
-            ) : (
-              <div className="w-8 h-8 rounded-full bg-primary text-on-primary flex items-center justify-center text-xs font-semibold">
-                {user.name?.[0]?.toUpperCase() || "U"}
-              </div>
-            )}
-            <span className="text-body-sm font-medium text-on-surface">
-              Signed in as <strong className="font-semibold text-primary">{user.name || user.email}</strong>
-            </span>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link
-              href="/wardrobe/saved"
-              className="hidden sm:inline-flex items-center gap-1.5 text-body-sm font-semibold text-primary hover:text-secondary transition-colors"
-            >
-              <Sparkles className="w-4 h-4 text-secondary" />
-              <span>Saved Looks</span>
-            </Link>
-            <Link
-              href="/wardrobe"
-              className="inline-flex items-center gap-1.5 text-body-sm font-semibold text-primary hover:text-secondary transition-colors"
-            >
-              <Shirt className="w-4 h-4" />
-              <span>Wardrobe</span>
-            </Link>
-            <form
-              action={async () => {
-                "use server";
-                await signOut({ redirectTo: "/" });
-              }}
-            >
-              <SignOutButton />
-            </form>
-          </div>
-        </div>
-      )}
-
       <div className="flex flex-col w-full my-auto">
         <div className="w-full max-w-4xl mx-auto flex flex-col items-center">
           {/* Top Editorial Header & Badge */}
@@ -112,56 +67,27 @@ export default async function Home() {
           {/* Actions & Onboarding Entry Point */}
           <section className="w-full flex flex-col items-center text-center mt-space-lg space-y-space-md">
             <div className="w-full sm:w-auto flex flex-col sm:flex-row items-center gap-space-sm justify-center">
-              {user ? (
-                <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
-                  <Link
-                    href="/wardrobe?stylist=open"
-                    className="w-full sm:w-64 h-12 px-space-lg bg-primary text-on-primary font-title-md text-title-md rounded-xl shadow-md transition-all duration-300 hover:bg-primary-container hover:shadow-lg active:scale-[0.99] flex items-center justify-center gap-2 group cursor-pointer"
-                    id="btn-recommend-home"
-                  >
-                    <Sparkles className="w-4 h-4 text-secondary" />
-                    <span>Style an outfit</span>
-                  </Link>
-                  <Link
-                    href="/wardrobe"
-                    className="w-full sm:w-64 h-12 px-space-lg bg-surface-container-high text-on-surface font-title-md text-title-md rounded-xl shadow-xs transition-all duration-300 hover:bg-surface-container-highest border border-outline-variant/30 flex items-center justify-center gap-2 group cursor-pointer"
-                    id="btn-onboard"
-                  >
-                    <span>My wardrobe</span>
-                    <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                  </Link>
-                </div>
-              ) : (
-                <Link
-                  href="/signin?callbackUrl=/wardrobe"
-                  className="w-full sm:w-72 h-12 px-space-xl bg-primary text-on-primary font-title-md text-title-md rounded-xl shadow-md transition-all duration-300 hover:bg-primary-container hover:shadow-lg active:scale-[0.99] flex items-center justify-center gap-2 group cursor-pointer"
-                  id="btn-onboard"
-                >
-                  <span>Build my wardrobe</span>
-                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                </Link>
-              )}
+              <Link
+                href="/signin?callbackUrl=/home"
+                className="w-full sm:w-72 h-12 px-space-xl bg-primary text-on-primary font-title-md text-title-md rounded-xl shadow-md transition-all duration-300 hover:bg-primary-container hover:shadow-lg active:scale-[0.99] flex items-center justify-center gap-2 group cursor-pointer"
+                id="btn-onboard"
+              >
+                <span>Build my wardrobe</span>
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </Link>
             </div>
 
-            {!user ? (
-              <div className="pt-1">
-                <Link
-                  className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-200 inline-flex items-center gap-1 group"
-                  href="/signin?callbackUrl=/wardrobe"
-                >
-                  <span>Already have an account?</span>
-                  <span className="text-secondary font-semibold group-hover:underline underline-offset-4">
-                    Sign in
-                  </span>
-                </Link>
-              </div>
-            ) : (
-              <div className="pt-1">
-                <p className="font-body-sm text-body-sm text-on-surface-variant">
-                  Ready to add pieces or get intelligent outfit combinations.
-                </p>
-              </div>
-            )}
+            <div className="pt-1">
+              <Link
+                className="font-body-md text-body-md text-on-surface-variant hover:text-primary transition-colors duration-200 inline-flex items-center gap-1 group"
+                href="/signin?callbackUrl=/home"
+              >
+                <span>Already have an account?</span>
+                <span className="text-secondary font-semibold group-hover:underline underline-offset-4">
+                  Sign in
+                </span>
+              </Link>
+            </div>
 
             {/* Trust & Cultural Context Microcopy */}
             <footer className="pt-space-md max-w-lg mx-auto">

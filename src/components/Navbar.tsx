@@ -23,7 +23,11 @@ export function Navbar({ user }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navLinks = [
-    { label: "Home", href: "/", active: pathname === "/" },
+    {
+      label: "Home",
+      href: user ? "/home" : "/",
+      active: pathname === "/home" || pathname === "/",
+    },
     {
       label: "Wardrobe",
       href: "/wardrobe",
@@ -41,7 +45,7 @@ export function Navbar({ user }: NavbarProps) {
       <div className="h-16 max-w-5xl mx-auto px-margin-mobile md:px-margin flex items-center justify-between gap-space-md">
         {/* Brand Logo & Name */}
         <Link
-          href="/"
+          href={user ? "/home" : "/"}
           className="flex items-center gap-space-sm group cursor-pointer"
         >
           <Image
