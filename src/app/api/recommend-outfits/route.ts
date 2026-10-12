@@ -28,12 +28,22 @@ export async function POST(request: Request) {
         ? body.weather.trim()
         : "31°C, sunny & humid (78% humidity)";
 
-    const event =
-      typeof body.event === "string" && body.event.trim()
-        ? body.event.trim()
-        : typeof body.occasion === "string" && body.occasion.trim()
+    const occasion =
+      typeof body.occasion === "string" && body.occasion.trim()
         ? body.occasion.trim()
-        : "Smart Casual / Day Outing";
+        : typeof body.event === "string" && body.event.trim()
+        ? body.event.trim()
+        : "Smart Casual";
+
+    const outing =
+      typeof body.outing === "string" && body.outing.trim()
+        ? body.outing.trim()
+        : "";
+
+    const date =
+      typeof body.date === "string" && body.date.trim()
+        ? body.date.trim()
+        : "";
 
     const timeOfDay =
       typeof body.timeOfDay === "string" && body.timeOfDay.trim()
@@ -45,7 +55,11 @@ export async function POST(request: Request) {
         ? body.notes.trim()
         : "";
 
-    const effectiveEvent = timeOfDay ? `${event} (${timeOfDay})` : event;
+    // Build comprehensive plan descriptor
+    const planComponents = [occasion];
+    if (outing) planComponents.push(`Specific Outing: ${outing}`);
+    if (date || timeOfDay) planComponents.push(`When: ${[date, timeOfDay].filter(Boolean).join(" ")}`);
+    const effectiveEvent = planComponents.join(" · ");
 
     const stylePreference =
       typeof body.stylePreference === "string" && body.stylePreference.trim()
@@ -60,8 +74,11 @@ export async function POST(request: Request) {
         : stylePreference;
 
     const contextualVibeParts = [baseVibe];
+    if (outing) {
+      contextualVibeParts.push(`Venue/Outing: "${outing}"`);
+    }
     if (notes) {
-      contextualVibeParts.push(`User notes/outing details: "${notes}"`);
+      contextualVibeParts.push(`Styling notes: "${notes}"`);
     }
 
     const anchorItemId =

@@ -18,6 +18,8 @@ import {
   Shirt,
   Plus,
   Compass,
+  Calendar as CalendarIcon,
+  MapPin,
 } from "lucide-react";
 
 type WardrobeItem = {
@@ -52,6 +54,18 @@ const OCCASIONS = [
   "Other",
 ];
 
+const OUTING_SUGGESTIONS = [
+  "Dinner at upscale restaurant",
+  "Executive boardroom meeting",
+  "Sunday service & fellowship",
+  "Casual brunch & café",
+  "Owambe wedding reception",
+  "Night out & drinks",
+  "Outdoor day festival",
+];
+
+const DATE_OPTIONS = ["Today", "Tomorrow", "This weekend"];
+
 const TIME_OPTIONS = [
   { label: "Morning", icon: Sunrise },
   { label: "Afternoon", icon: Sun },
@@ -64,6 +78,14 @@ const STYLE_OPTIONS = [
   "Formal",
   "Traditional",
   "Surprise me",
+];
+
+const LOCATION_PRESETS = [
+  { label: "Lagos (Island)", loc: "Victoria Island, Lagos", w: "31°C · Humid · Island breeze" },
+  { label: "Lagos (Mainland)", loc: "Ikeja, Lagos", w: "32°C · Warm & Tropical" },
+  { label: "Abuja", loc: "Abuja, Nigeria", w: "29°C · Sunny & Dry" },
+  { label: "Port Harcourt", loc: "Port Harcourt, Nigeria", w: "28°C · Rain showers" },
+  { label: "London", loc: "London, UK", w: "16°C · Mild & Overcast" },
 ];
 
 // Helper to determine the editorial flat-lay grid column span and aspect ratio
@@ -104,17 +126,23 @@ function getItemGridProps(index: number, total: number) {
 }
 
 export default function PlanPage() {
+  // User plans state
   const [occasion, setOccasion] = useState("Work");
+  const [outing, setOuting] = useState("");
+  const [planDate, setPlanDate] = useState("Today");
   const [timeOfDay, setTimeOfDay] = useState("Afternoon");
   const [style, setStyle] = useState("Smart casual");
   const [location, setLocation] = useState("Lagos, Nigeria");
   const [weather, setWeather] = useState("31°C · Humid · Rain possible");
+  const [notes, setNotes] = useState("");
+
+  // Location & Weather editing
   const [isEditingLocation, setIsEditingLocation] = useState(false);
   const [customLocationInput, setCustomLocationInput] = useState("");
   const [customWeatherInput, setCustomWeatherInput] = useState("");
   const [detectingLocation, setDetectingLocation] = useState(false);
-  const [notes, setNotes] = useState("");
 
+  // Wardrobe readiness & submission state
   const [loadingWardrobe, setLoadingWardrobe] = useState(true);
   const [hasWardrobeItems, setHasWardrobeItems] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -151,6 +179,7 @@ export default function PlanPage() {
     checkWardrobe();
   }, []);
 
+  // Real-time GPS and Live Open-Meteo Weather Detection
   function handleDetectLocation() {
     if (!navigator.geolocation) {
       alert("Geolocation is not supported by your browser.");
@@ -158,16 +187,62 @@ export default function PlanPage() {
     }
     setDetectingLocation(true);
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setLocation(`Lagos Region (${pos.coords.latitude.toFixed(2)}°N, ${pos.coords.longitude.toFixed(2)}°E)`);
-        setWeather("31°C · Humid · Tropical breeze");
-        setDetectingLocation(false);
-        setIsEditingLocation(false);
+      async (pos) => {
+        try {
+          const lat = pos.coords.latitude;
+          const lon = pos.coords.longitude;
+
+          // Fetch reverse geocode and live meteorological data in parallel
+          const [geoRes, weatherRes] = await Promise.all([
+            fetch(
+              `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`
+            )
+              .then((r) => r.json())
+              .catch(() => null),
+            fetch(
+              `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,weather_code`
+            )
+              .then((r) => r.json())
+              .catch(() => null),
+          ]);
+
+          let resolvedLocation = "Lagos, Nigeria";
+          if (geoRes?.locality || geoRes?.city) {
+            const locality = geoRes.locality || geoRes.city;
+            const region = geoRes.principalSubdivision || geoRes.countryName;
+            resolvedLocation = [locality, region].filter(Boolean).join(", ");
+          }
+
+          let resolvedWeather = "31°C · Humid · Tropical breeze";
+          if (weatherRes?.current) {
+            const temp = Math.round(weatherRes.current.temperature_2m);
+            const humidity = weatherRes.current.relative_humidity_2m;
+            const code = weatherRes.current.weather_code;
+            let condition = "Clear";
+            if (code >= 51 && code <= 67) condition = "Rain possible";
+            else if (code >= 80) condition = "Showers";
+            else if (code >= 1 && code <= 3) condition = "Partly cloudy";
+            else if (code === 0) condition = "Clear sky";
+
+            resolvedWeather = `${temp}°C · ${condition} · ${humidity}% humidity`;
+          }
+
+          setLocation(resolvedLocation);
+          setWeather(resolvedWeather);
+          setCustomLocationInput(resolvedLocation);
+          setCustomWeatherInput(resolvedWeather);
+        } catch (err) {
+          console.warn("Location detection fallback:", err);
+          setLocation("Lagos, Nigeria");
+          setWeather("31°C · Humid · Tropical breeze");
+        } finally {
+          setDetectingLocation(false);
+          setIsEditingLocation(false);
+        }
       },
       () => {
-        setLocation("Lagos, Nigeria");
-        setWeather("31°C · Humid · Rain possible");
         setDetectingLocation(false);
+        setIsEditingLocation(true);
       }
     );
   }
@@ -182,6 +257,14 @@ export default function PlanPage() {
     setIsEditingLocation(false);
   }
 
+  function handleApplyPreset(preset: typeof LOCATION_PRESETS[0]) {
+    setLocation(preset.loc);
+    setWeather(preset.w);
+    setCustomLocationInput(preset.loc);
+    setCustomWeatherInput(preset.w);
+    setIsEditingLocation(false);
+  }
+
   async function fetchRecommendations() {
     setError(null);
     setSubmitting(true);
@@ -192,6 +275,8 @@ export default function PlanPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           occasion,
+          outing: outing.trim(),
+          date: planDate,
           timeOfDay,
           style: style === "Surprise me" ? "Versatile, expressive & fashionable" : style,
           location,
@@ -233,7 +318,6 @@ export default function PlanPage() {
     const isCurrentlySaved = !!savedOutfits[activeOutfitIndex];
 
     if (isCurrentlySaved) {
-      // Toggle saved state
       setSavedOutfits((prev) => ({ ...prev, [activeOutfitIndex]: false }));
       return;
     }
@@ -246,7 +330,7 @@ export default function PlanPage() {
         body: JSON.stringify({
           title: currentOutfit.title,
           vibeDescription: currentOutfit.vibeDescription,
-          event: `${occasion} (${timeOfDay})`,
+          event: `${occasion}${outing ? ` · ${outing}` : ""} (${planDate} ${timeOfDay})`,
           location,
           weather,
           stylingTips: currentOutfit.stylingTips,
@@ -274,13 +358,13 @@ export default function PlanPage() {
       setIsRefreshing(false);
     }, 500);
 
-    // If there are multiple pre-fetched outfits, advance to next
+    // If there are multiple pre-fetched outfits, cycle to next
     if (outfits && outfits.length > 1 && activeOutfitIndex < outfits.length - 1) {
       setActiveOutfitIndex((prev) => prev + 1);
       return;
     }
 
-    // Otherwise, generate a fresh curation from the API
+    // Otherwise generate a fresh curation from the API
     await fetchRecommendations();
   }
 
@@ -320,7 +404,8 @@ export default function PlanPage() {
                     Your outfit is ready.
                   </h1>
                   <p className="font-body-md text-body-md text-on-surface-variant">
-                    {location} · {weather} | {occasion} / {style}
+                    {location} · {weather} | {occasion}
+                    {outing ? ` (${outing})` : ""} · {planDate} {timeOfDay} / {style}
                   </p>
                 </div>
 
@@ -406,7 +491,7 @@ export default function PlanPage() {
                     <div className="bg-surface-container-low rounded-lg p-space-md shadow-sm space-y-2.5">
                       <p className="font-body-md text-body-md text-on-surface leading-relaxed">
                         {whyThisWorksText ||
-                          `Today in ${location} (${weather}), this look balances style and comfort for your ${occasion} plans.`}
+                          `Tailored for ${occasion} in ${location} (${weather}) to ensure optimal breathability, polish, and comfort.`}
                       </p>
                       {currentOutfit.vibeDescription && (
                         <p className="font-body-sm text-body-sm text-on-surface-variant italic border-t border-outline-variant/15 pt-2">
@@ -436,7 +521,7 @@ export default function PlanPage() {
                     {currentOutfit.missingPiecesAdvice && (
                       <div className="bg-secondary/10 rounded-lg p-space-md border border-secondary/20">
                         <span className="font-label-caps text-label-caps text-[#835336] font-bold uppercase tracking-wider block mb-1">
-                          Finishing Touch
+                          Finishing Touch (Not in wardrobe)
                         </span>
                         <p className="font-body-sm text-body-sm text-[#835336]">
                           {currentOutfit.missingPiecesAdvice}
@@ -552,7 +637,7 @@ export default function PlanPage() {
                     </button>
                   </div>
 
-                  {/* Inline Location Editor Drawer */}
+                  {/* Inline Location & Weather Editor Drawer */}
                   {isEditingLocation && (
                     <div className="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant/30 shadow-sm max-w-lg mx-auto text-left space-y-3 mb-space-sm animate-in fade-in duration-200">
                       <div className="flex items-center justify-between">
@@ -570,8 +655,22 @@ export default function PlanPage() {
                           ) : (
                             <Compass className="w-3.5 h-3.5" />
                           )}
-                          <span>Detect GPS</span>
+                          <span>Detect GPS &amp; Live Weather</span>
                         </button>
+                      </div>
+
+                      {/* Quick Location Presets */}
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {LOCATION_PRESETS.map((preset) => (
+                          <button
+                            key={preset.label}
+                            type="button"
+                            onClick={() => handleApplyPreset(preset)}
+                            className="px-2.5 py-1 text-[11px] rounded-md bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-medium cursor-pointer"
+                          >
+                            {preset.label}
+                          </button>
+                        ))}
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -582,7 +681,7 @@ export default function PlanPage() {
                           <input
                             value={customLocationInput}
                             onChange={(e) => setCustomLocationInput(e.target.value)}
-                            placeholder="e.g. Lagos, Abuja, London"
+                            placeholder="e.g. Victoria Island, Lagos, Abuja"
                             className="w-full text-xs rounded-lg border border-outline-variant/40 bg-surface-container-low px-3 py-2 text-on-surface outline-none focus:border-primary"
                           />
                         </div>
@@ -593,7 +692,7 @@ export default function PlanPage() {
                           <input
                             value={customWeatherInput}
                             onChange={(e) => setCustomWeatherInput(e.target.value)}
-                            placeholder="e.g. 32°C Sunny, Harmattan breeze, Rain"
+                            placeholder="e.g. 31°C Humid, Rain possible, 22°C A/C"
                             className="w-full text-xs rounded-lg border border-outline-variant/40 bg-surface-container-low px-3 py-2 text-on-surface outline-none focus:border-primary"
                           />
                         </div>
@@ -603,14 +702,14 @@ export default function PlanPage() {
                         <button
                           type="button"
                           onClick={() => setIsEditingLocation(false)}
-                          className="px-3 py-1.5 text-xs text-on-surface-variant hover:bg-surface-container rounded-lg"
+                          className="px-3 py-1.5 text-xs text-on-surface-variant hover:bg-surface-container rounded-lg cursor-pointer"
                         >
                           Cancel
                         </button>
                         <button
                           type="button"
                           onClick={handleSaveLocation}
-                          className="px-3.5 py-1.5 text-xs bg-primary text-on-primary font-medium rounded-lg hover:bg-primary-container"
+                          className="px-3.5 py-1.5 text-xs bg-primary text-on-primary font-medium rounded-lg hover:bg-primary-container cursor-pointer"
                         >
                           Apply
                         </button>
@@ -622,7 +721,7 @@ export default function PlanPage() {
                     What are you wearing today?
                   </h1>
                   <p className="font-body-lg text-body-md sm:text-body-lg text-on-surface-variant max-w-lg mx-auto">
-                    Tell us a few quick details. We&apos;ll pick an outfit from clothes you own.
+                    Tell us your plans. We&apos;ll curate the perfect outfit strictly from clothes you own.
                   </p>
                 </div>
 
@@ -634,7 +733,7 @@ export default function PlanPage() {
                       Your wardrobe is empty
                     </h3>
                     <p className="font-body-sm text-body-sm text-on-surface-variant max-w-md mx-auto">
-                      Please add a few clothing pieces first so the AI stylist can combine items from your personal collection.
+                      Please add your shirts, trousers, traditional pieces, or shoes first so the AI stylist can combine items from your personal collection.
                     </p>
                     <Link
                       href="/wardrobe/add"
@@ -682,12 +781,66 @@ export default function PlanPage() {
                     </div>
                   </div>
 
-                  {/* 2. When & Style Group Split */}
+                  {/* 2. Specific Outing / Venue (e.g. Dinner, Meeting, Church service) */}
+                  <div className="space-y-space-xs">
+                    <label className="font-headline-sm text-headline-sm text-primary font-medium block">
+                      Outing &amp; Venue
+                    </label>
+                    <input
+                      type="text"
+                      value={outing}
+                      onChange={(e) => setOuting(e.target.value)}
+                      placeholder="e.g. Dinner at RSVP Victoria Island, Executive Boardroom pitch, Church Thanksgiving"
+                      className="w-full bg-surface-container-low text-on-surface placeholder:text-outline font-body-md text-body-md rounded-lg p-space-md focus:bg-surface-container-lowest focus:outline-none focus:ring-1 focus:ring-primary transition-all duration-150 border border-outline-variant/20 shadow-inner"
+                    />
+                    {/* Quick suggestion tags */}
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {OUTING_SUGGESTIONS.map((sug) => (
+                        <button
+                          key={sug}
+                          type="button"
+                          onClick={() => setOuting(sug)}
+                          className="text-[11px] px-2.5 py-1 rounded-md bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-medium transition-colors cursor-pointer"
+                        >
+                          + {sug}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 3. Date & Time Selection */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-space-lg">
-                    {/* When? Group */}
+                    {/* Date Selection */}
+                    <div className="space-y-space-sm">
+                      <label className="font-headline-sm text-headline-sm text-primary font-medium flex items-center gap-1.5">
+                        <CalendarIcon className="w-4 h-4 text-secondary" />
+                        <span>Date</span>
+                      </label>
+                      <div className="grid grid-cols-3 gap-space-xs">
+                        {DATE_OPTIONS.map((d) => {
+                          const isSelected = planDate === d;
+                          return (
+                            <button
+                              key={d}
+                              type="button"
+                              onClick={() => setPlanDate(d)}
+                              className={`py-2 px-2 text-center rounded-lg font-label-md text-label-md transition-all cursor-pointer ${
+                                isSelected
+                                  ? "bg-primary-container text-on-primary shadow-sm font-semibold"
+                                  : "bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-medium"
+                              }`}
+                            >
+                              {d}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Time of Day */}
                     <div className="space-y-space-sm">
                       <label className="font-headline-sm text-headline-sm text-primary font-medium">
-                        When?
+                        Time of Day
                       </label>
                       <div className="grid grid-cols-3 gap-space-xs" id="time-group">
                         {TIME_OPTIONS.map((t) => {
@@ -711,35 +864,35 @@ export default function PlanPage() {
                         })}
                       </div>
                     </div>
+                  </div>
 
-                    {/* What's your style? Group */}
-                    <div className="space-y-space-sm">
-                      <label className="font-headline-sm text-headline-sm text-primary font-medium">
-                        What&apos;s your style?
-                      </label>
-                      <div className="flex flex-wrap gap-space-xs" id="style-group">
-                        {STYLE_OPTIONS.map((st) => {
-                          const isSelected = style === st;
-                          return (
-                            <button
-                              key={st}
-                              type="button"
-                              onClick={() => setStyle(st)}
-                              className={`px-space-md py-2 rounded-full font-label-md text-label-md transition-all duration-200 cursor-pointer ${
-                                isSelected
-                                  ? "bg-primary-container text-on-primary shadow-sm font-semibold"
-                                  : "bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-medium"
-                              }`}
-                            >
-                              {st}
-                            </button>
-                          );
-                        })}
-                      </div>
+                  {/* 4. Preferred Style */}
+                  <div className="space-y-space-sm">
+                    <label className="font-headline-sm text-headline-sm text-primary font-medium">
+                      Preferred Style
+                    </label>
+                    <div className="flex flex-wrap gap-space-xs" id="style-group">
+                      {STYLE_OPTIONS.map((st) => {
+                        const isSelected = style === st;
+                        return (
+                          <button
+                            key={st}
+                            type="button"
+                            onClick={() => setStyle(st)}
+                            className={`px-space-md py-2 rounded-full font-label-md text-label-md transition-all duration-200 cursor-pointer ${
+                              isSelected
+                                ? "bg-primary-container text-on-primary shadow-sm font-semibold"
+                                : "bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-medium"
+                            }`}
+                          >
+                            {st}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
 
-                  {/* 3. Anything else? (Optional) */}
+                  {/* 5. Anything else? (Optional) */}
                   <div className="space-y-space-xs">
                     <label
                       className="font-headline-sm text-headline-sm text-primary cursor-pointer font-medium block"
@@ -754,8 +907,8 @@ export default function PlanPage() {
                       id="context-input"
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
-                      placeholder="e.g. I'll be outside most of the day, or in AC, or I want to wear my white polo"
-                      rows={3}
+                      placeholder="e.g. I'll be in air-conditioned rooms all day, or I want to wear my white sneakers"
+                      rows={2}
                       className="w-full bg-surface-container-low text-on-surface placeholder:text-outline font-body-md text-body-md rounded-lg p-space-md focus:bg-surface-container-lowest focus:outline-none focus:ring-1 focus:ring-primary transition-all duration-150 resize-none border border-outline-variant/20 shadow-inner"
                     />
                   </div>
@@ -770,7 +923,7 @@ export default function PlanPage() {
                     </div>
                   )}
 
-                  {/* 4. Action Button */}
+                  {/* 6. Action Button */}
                   <div className="pt-space-xs flex flex-col items-center gap-space-xs">
                     <button
                       type="submit"
@@ -791,7 +944,7 @@ export default function PlanPage() {
                       )}
                     </button>
                     <span className="font-body-sm text-body-sm text-on-surface-variant text-center pt-1">
-                      Ensembles selected exclusively from items catalogued in your personal wardrobe.
+                      Ensembles selected strictly from pieces catalogued in your personal wardrobe.
                     </span>
                   </div>
                 </form>

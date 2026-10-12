@@ -265,30 +265,31 @@ export async function recommendOutfits({
     style: item.style || "",
   }));
 
-  const systemPrompt = `You are a world-class luxury fashion stylist and outfit curator specialising in Nigerian and tropical climate wardrobe planning.
+  const systemPrompt = `You are an elite wardrobe stylist and outfit curator.
 
-YOUR PRIMARY GOAL:
-Recommend 1 to 3 distinct, exceptionally styled outfit combinations created EXCLUSIVELY by combining items from the user's personal wardrobe catalog.
+ABSOLUTE MANDATORY RULE:
+You MUST ONLY recommend outfit combinations using the clothes provided in the USER'S WARDROBE COLLECTION below.
+DO NOT INVENT, FABRICATE, OR ASSUME ANY CLOTHES THAT THE USER DOES NOT OWN.
+Every single outfit's "itemIds" list MUST ONLY contain exact "id" strings from the user's wardrobe list.
+If the user does not have a specific garment (e.g., they don't own a blazer, boots, or a kaftan), DO NOT invent one. Choose only from what they actually have.
+The server strictly enforces this rule and will automatically discard any fabricated or unowned item IDs.
 
 USER CONTEXT & CRITERIA:
 - Location: ${location}
 - Weather Conditions: ${weather}
-- Occasion / Event: ${event}
+- Occasion & Outing: ${event}
 - Style Preference: ${stylePreference}
-- Look & Vibe Desired: ${vibe}
+- Look & Vibe: ${vibe}
 
 USER'S WARDROBE COLLECTION:
 ${JSON.stringify(formattedItems, null, 2)}
 
 STRICT RULES:
-1. ONLY use items from the user's wardrobe list above. In each outfit's "itemIds" array, include the exact "id" strings of the items chosen.
-2. Build harmonious, practical outfits (e.g. Top + Bottom + Shoes, or Traditional + Shoes + Accessory, or Dress + Layer + Shoes).
-3. If the user is missing a category (for example they have tops and bottoms but no shoes logged yet), select the best matching pieces they DO have, and use "missingPiecesAdvice" to suggest what footwear or finishing touch would complete it.
-4. Deeply respect the location (${location}) and weather (${weather}):
-   - In hot or humid Nigerian weather (e.g. Lagos), prioritize breathability, linen, cotton pique, lightweight tailoring, and heat resilience.
-   - For Nigerian cultural events (e.g., Owambe, wedding, Sunday service, Friday mosque), favor traditional attire (Kaftan, Agbada, Senator, Ankara) or polished sharp looks.
-   - For office settings (Victoria Island, Ikoyi, Marina, Abuja), balance air-conditioned indoor comfort with tropical outdoor heat.
-5. Provide actionable, high-taste editorial styling tips for each look.
+1. EXCLUSIVE USE OF OWNED ITEMS: Every outfit must be constructed solely from the user's logged wardrobe items above. Every ID in itemIds must exist in the collection.
+2. Select cohesive, stylish, and practical combinations (e.g. Top + Bottom, or Traditional piece + Loafers, or Top + Bottom + Shoes).
+3. "missingPiecesAdvice": If the user is missing a category in their wardrobe (e.g. no shoes or accessories catalogued yet), choose the best owned pieces for itemIds, and use "missingPiecesAdvice" to suggest what finishing touch or footwear would complement it.
+4. Deeply adapt to the location (${location}) and weather (${weather}) in fabric selection, breathability, and layering.
+5. Provide actionable, high-taste styling tips for each look.
 6. Return valid JSON strictly adhering to the schema.`;
 
   let lastError: unknown = null;
