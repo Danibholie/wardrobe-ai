@@ -309,7 +309,7 @@ export default function WardrobePage() {
   }
 
   return (
-    <main className="w-full pt-20 pb-20 md:pb-12 bg-background min-h-screen">
+    <main className="w-full pt-20 pb-24 md:pb-12 bg-background min-h-screen">
       <div className="max-w-5xl mx-auto px-margin-mobile md:px-margin py-space-md">
         <div className="flex flex-col w-full">
           {/* Atmospheric Lagos Climate & Wardrobe Intelligence Bar */}

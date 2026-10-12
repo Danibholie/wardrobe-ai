@@ -1,8 +1,14 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, ShieldCheck, Sparkles, CheckCircle2 } from "lucide-react";
 import { auth, signIn } from "@/auth";
 import { GoogleSignInButton } from "./GoogleSignInButton";
+
+export const metadata: Metadata = {
+  title: "Sign In · Wardrobe AI",
+  description: "Sign in to access your wardrobe collection and personal style recommendations.",
+};
 
 type SignInPageProps = {
   searchParams: Promise<{ callbackUrl?: string; error?: string }>;

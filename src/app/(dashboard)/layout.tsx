@@ -1,6 +1,16 @@
+import type { Metadata } from "next";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
+
+export const metadata: Metadata = {
+  title: {
+    default: "Wardrobe AI · Curated Architecture",
+    template: "%s | Wardrobe AI",
+  },
+  description:
+    "Curate your personal collection, generate weather-smart outfits, and track your wardrobe rotation in Nigeria.",
+};
 
 export default async function DashboardLayout({
   children,

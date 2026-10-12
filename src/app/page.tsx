@@ -1,8 +1,20 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowRight, ShieldCheck } from "lucide-react";
 import { auth } from "@/auth";
+
+export const metadata: Metadata = {
+  title: "Wardrobe AI · Stop Wondering What to Wear",
+  description:
+    "Your wardrobe already has the answer. Intelligent outfit curation strictly from clothes you own, tailored for Lagos weather and occasions.",
+  openGraph: {
+    title: "Wardrobe AI · Stop Wondering What to Wear",
+    description:
+      "Your wardrobe already has the answer. Intelligent outfit curation strictly from clothes you own, tailored for Lagos weather and occasions.",
+  },
+};
 
 export default async function Home() {
   const session = await auth();

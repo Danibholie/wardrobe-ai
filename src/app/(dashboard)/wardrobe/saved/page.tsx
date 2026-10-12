@@ -331,7 +331,7 @@ export default function SavedOutfitsPage() {
   }, [outfits, activeCategory]);
 
   return (
-    <main className="w-full pt-16 pb-20 md:pb-12 bg-background min-h-screen">
+    <main className="w-full pt-16 pb-24 md:pb-12 bg-background min-h-screen">
       <div className="max-w-5xl mx-auto px-margin-mobile md:px-margin py-space-md">
         <div className="flex flex-col w-full">
           {/* Subtle ambient top gradient & Editorial Header */}
@@ -725,7 +725,7 @@ export default function SavedOutfitsPage() {
             if (e.target === e.currentTarget) setCheckinModalOpen(false);
           }}
         >
-          <div className="bg-surface-container-lowest rounded-xl max-w-md w-full p-space-lg shadow-2xl relative border border-outline-variant/30">
+          <div className="bg-surface-container-lowest rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto p-space-lg shadow-2xl relative border border-outline-variant/30">
             <div className="flex items-center justify-between mb-space-md">
               <h3 className="font-headline-sm text-headline-sm text-primary font-medium">
                 Log outfit wear
