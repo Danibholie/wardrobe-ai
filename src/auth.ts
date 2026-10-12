@@ -28,7 +28,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (!isLoggedIn) {
           return Response.json(
             { success: false, message: "Unauthorized. Please sign in." },
-            { status: 401 }
+            { status: 401 },
           );
         }
         return true;
@@ -38,7 +38,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (pathname.startsWith("/wardrobe")) {
         return isLoggedIn;
       }
-
       return true;
     },
 
