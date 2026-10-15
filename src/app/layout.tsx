@@ -1,9 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
-const siteUrl = process.env.NEXTAUTH_URL || "https://wardrobe-ai.vercel.app";
+const siteUrl = "https://lbd-wardrobe-ai.netlify.app";
 const brandLogoUrl =
-  "https://lh3.googleusercontent.com/aida/AEtjO1UP5D9xXg9-RbsyJsRklGTTI6IgxYcU26iq2pBzrBU0C1a1K7MzwKSWX7exJKVKdPCSW90_v3qojIqaGuFLctGorJgeYxpPdDbiePPnRFc2WZKJAFEyoiEejvdwl3gtNFF9oLGX8U5RYuTFTTES-lCYXd4-ttjj7YaHyqh48bxnY56_oO3SJ2rYqXarVWexvI58DmBMoZI54hDRmuur01j6H6hRgZh_o_n5nVK7Iij10AfSDbpfBiZ72lQ";
+  "https://lbd-wardrobe-ai.netlify.app/wardrobe-ai-logo.webp";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -49,14 +49,9 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: [
-      { url: "/favicon.ico" },
-      { url: brandLogoUrl, type: "image/png" },
-    ],
+    icon: [{ url: "/favicon.ico" }, { url: brandLogoUrl, type: "image/png" }],
     shortcut: [brandLogoUrl],
-    apple: [
-      { url: brandLogoUrl, sizes: "180x180", type: "image/png" },
-    ],
+    apple: [{ url: brandLogoUrl, sizes: "180x180", type: "image/png" }],
   },
   manifest: "/manifest.json",
   openGraph: {
@@ -105,10 +100,14 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..900;1,6..96,400..900&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap"
           rel="stylesheet"
         />
-        <meta name="apple-mobile-web-app-title" content="Wardrobe AI" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="format-detection" content="telephone=no" />
+        <meta name="theme-color" content="#121212" />
+        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href="/wardrobe-ai-logo.webp" type="image/png" />
+        <link rel="apple-touch-icon" href="/wardrobe-ai-logo.webp" />
+        <meta name="apple-mobile-web-app-title" content="Wardrobe AI" />
       </head>
       <body className="bg-background font-body-md text-on-surface antialiased min-h-screen flex flex-col">
         {children}

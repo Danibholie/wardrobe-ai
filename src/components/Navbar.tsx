@@ -72,15 +72,15 @@ export function Navbar({ user }: NavbarProps) {
           >
             <Image
               alt="Wardrobe AI Logo"
-              className="h-8 w-auto object-contain transition-transform group-hover:scale-105"
-              src="https://lh3.googleusercontent.com/aida/AEtjO1UP5D9xXg9-RbsyJsRklGTTI6IgxYcU26iq2pBzrBU0C1a1K7MzwKSWX7exJKVKdPCSW90_v3qojIqaGuFLctGorJgeYxpPdDbiePPnRFc2WZKJAFEyoiEejvdwl3gtNFF9oLGX8U5RYuTFTTES-lCYXd4-ttjj7YaHyqh48bxnY56_oO3SJ2rYqXarVWexvI58DmBMoZI54hDRmuur01j6H6hRgZh_o_n5nVK7Iij10AfSDbpfBiZ72lQ"
-              width={32}
-              height={32}
+              className="h-16 w-auto"
+              src="/wardrobe-ai-logo.webp"
+              width={500}
+              height={500}
               priority
             />
-            <span className="font-headline-sm text-headline-sm text-primary tracking-tight font-medium hidden xs:inline-block sm:inline-block">
+            {/* <span className="font-headline-sm text-headline-sm text-primary tracking-tight font-medium hidden xs:inline-block sm:inline-block">
               Wardrobe AI
-            </span>
+            </span> */}
           </Link>
 
           {/* Desktop Navigation Links */}
@@ -203,7 +203,10 @@ export function Navbar({ user }: NavbarProps) {
             {user && (
               <div className="pt-2 border-t border-outline-variant/20 flex items-center justify-between">
                 <span className="text-xs text-on-surface-variant">
-                  Location: <strong className="text-on-surface font-medium">Lagos, NG</strong>
+                  Location:{" "}
+                  <strong className="text-on-surface font-medium">
+                    Lagos, NG
+                  </strong>
                 </span>
                 <form action="/api/auth/signout" method="POST">
                   <SignOutButton />
