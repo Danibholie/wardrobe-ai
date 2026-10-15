@@ -22,6 +22,7 @@ import {
   MapPin,
 } from "lucide-react";
 import { formatAiError } from "@/lib/errors";
+import { useLocationWeather, detectLocationAndWeather } from "@/hooks/useLocationWeather";
 
 type WardrobeItem = {
   id: string;
@@ -156,11 +157,28 @@ export default function PlanPage() {
   const [savingIndex, setSavingIndex] = useState<number | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // Auto-detected location & weather
+  const {
+    fullLocation: autoLocation,
+    weatherSummary: autoWeather,
+  } = useLocationWeather();
+
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const paramOccasion = new URLSearchParams(window.location.search).get("occasion");
+      const searchParams = new URLSearchParams(window.location.search);
+      const paramOccasion = searchParams.get("occasion");
       if (paramOccasion && OCCASIONS.includes(paramOccasion)) {
         setOccasion(paramOccasion);
+      }
+      const paramLoc = searchParams.get("location");
+      if (paramLoc) {
+        setLocation(paramLoc);
+        setCustomLocationInput(paramLoc);
+      }
+      const paramWeather = searchParams.get("weather");
+      if (paramWeather) {
+        setWeather(paramWeather);
+        setCustomWeatherInput(paramWeather);
       }
     }
 
@@ -180,72 +198,46 @@ export default function PlanPage() {
     checkWardrobe();
   }, []);
 
-  // Real-time GPS and Live Open-Meteo Weather Detection
-  function handleDetectLocation() {
-    if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser.");
-      return;
+  // Auto-populate detected location & weather if no explicit param was passed
+  useEffect(() => {
+    const searchParams =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search)
+        : null;
+    const hasParamLoc = searchParams?.get("location");
+    const hasParamWeather = searchParams?.get("weather");
+
+    if (!hasParamLoc && autoLocation) {
+      setLocation((prev) => (prev === "Lagos, Nigeria" ? autoLocation : prev));
+      setCustomLocationInput((prev) =>
+        prev === "" || prev === "Lagos, Nigeria" ? autoLocation : prev
+      );
     }
+    if (!hasParamWeather && autoWeather) {
+      setWeather((prev) =>
+        prev === "31°C · Humid · Rain possible" ? autoWeather : prev
+      );
+      setCustomWeatherInput((prev) =>
+        prev === "" || prev === "31°C · Humid · Rain possible" ? autoWeather : prev
+      );
+    }
+  }, [autoLocation, autoWeather]);
+
+  // Real-time GPS and Live Open-Meteo Weather Detection
+  async function handleDetectLocation() {
     setDetectingLocation(true);
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        try {
-          const lat = pos.coords.latitude;
-          const lon = pos.coords.longitude;
-
-          // Fetch reverse geocode and live meteorological data in parallel
-          const [geoRes, weatherRes] = await Promise.all([
-            fetch(
-              `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`
-            )
-              .then((r) => r.json())
-              .catch(() => null),
-            fetch(
-              `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,weather_code`
-            )
-              .then((r) => r.json())
-              .catch(() => null),
-          ]);
-
-          let resolvedLocation = "Lagos, Nigeria";
-          if (geoRes?.locality || geoRes?.city) {
-            const locality = geoRes.locality || geoRes.city;
-            const region = geoRes.principalSubdivision || geoRes.countryName;
-            resolvedLocation = [locality, region].filter(Boolean).join(", ");
-          }
-
-          let resolvedWeather = "31°C · Humid · Tropical breeze";
-          if (weatherRes?.current) {
-            const temp = Math.round(weatherRes.current.temperature_2m);
-            const humidity = weatherRes.current.relative_humidity_2m;
-            const code = weatherRes.current.weather_code;
-            let condition = "Clear";
-            if (code >= 51 && code <= 67) condition = "Rain possible";
-            else if (code >= 80) condition = "Showers";
-            else if (code >= 1 && code <= 3) condition = "Partly cloudy";
-            else if (code === 0) condition = "Clear sky";
-
-            resolvedWeather = `${temp}°C · ${condition} · ${humidity}% humidity`;
-          }
-
-          setLocation(resolvedLocation);
-          setWeather(resolvedWeather);
-          setCustomLocationInput(resolvedLocation);
-          setCustomWeatherInput(resolvedWeather);
-        } catch (err) {
-          console.warn("Location detection fallback:", err);
-          setLocation("Lagos, Nigeria");
-          setWeather("31°C · Humid · Tropical breeze");
-        } finally {
-          setDetectingLocation(false);
-          setIsEditingLocation(false);
-        }
-      },
-      () => {
-        setDetectingLocation(false);
-        setIsEditingLocation(true);
-      }
-    );
+    try {
+      const res = await detectLocationAndWeather(true);
+      setLocation(res.fullLocation);
+      setWeather(res.weatherSummary);
+      setCustomLocationInput(res.fullLocation);
+      setCustomWeatherInput(res.weatherSummary);
+    } catch (err) {
+      console.warn("Location detection error:", err);
+    } finally {
+      setDetectingLocation(false);
+      setIsEditingLocation(false);
+    }
   }
 
   function handleSaveLocation() {

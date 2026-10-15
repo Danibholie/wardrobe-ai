@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Sparkles,
@@ -23,6 +23,7 @@ import {
   Plus,
 } from "lucide-react";
 import { formatAiError } from "@/lib/errors";
+import { useLocationWeather, detectLocationAndWeather } from "@/hooks/useLocationWeather";
 
 export type WardrobeItem = {
   id: string;
@@ -107,6 +108,33 @@ export function OutfitRecommenderModal({
   const [selectedWeather, setSelectedWeather] = useState(WEATHER_PRESETS[0].value);
   const [customWeather, setCustomWeather] = useState("");
   const [isCustomWeather, setIsCustomWeather] = useState(false);
+
+  const { fullLocation: autoLocation, weatherSummary: autoWeather } = useLocationWeather();
+  const [detectingLocation, setDetectingLocation] = useState(false);
+
+  useEffect(() => {
+    if (autoLocation && location === "Lagos, Nigeria") {
+      setLocation(autoLocation);
+    }
+    if (autoWeather && !customWeather) {
+      setCustomWeather(autoWeather);
+      setIsCustomWeather(true);
+    }
+  }, [autoLocation, autoWeather]);
+
+  async function handleAutoDetect() {
+    setDetectingLocation(true);
+    try {
+      const res = await detectLocationAndWeather(true);
+      setLocation(res.fullLocation);
+      setCustomWeather(res.weatherSummary);
+      setIsCustomWeather(true);
+    } catch (e) {
+      console.warn("Auto detect error:", e);
+    } finally {
+      setDetectingLocation(false);
+    }
+  }
 
   const [selectedEvent, setSelectedEvent] = useState(EVENT_PRESETS[0].value);
   const [customEvent, setCustomEvent] = useState("");
@@ -270,6 +298,15 @@ export function OutfitRecommenderModal({
                       <MapPin className="w-4 h-4 text-secondary" />
                       <span>Location</span>
                     </label>
+                    <button
+                      type="button"
+                      onClick={handleAutoDetect}
+                      disabled={detectingLocation}
+                      className="text-xs text-secondary hover:underline cursor-pointer font-medium flex items-center gap-1 disabled:opacity-60"
+                    >
+                      <Sparkles className="w-3 h-3 text-secondary" />
+                      <span>{detectingLocation ? "Detecting..." : "Auto-detect"}</span>
+                    </button>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {[

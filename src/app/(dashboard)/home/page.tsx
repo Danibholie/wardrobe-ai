@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   MapPin,
   CloudRain,
+  CloudSun,
   Calendar,
   Sparkles,
   ArrowRight,
@@ -16,6 +17,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { OutfitRecommenderModal } from "@/components/OutfitRecommenderModal";
+import { useLocationWeather } from "@/hooks/useLocationWeather";
 
 type WardrobeItem = {
   id: string;
@@ -65,6 +67,13 @@ export default function DashboardHomePage() {
   // Dynamic time-based greeting and date
   const [greeting, setGreeting] = useState("Good morning");
   const [currentDateFormatted, setCurrentDateFormatted] = useState("Thursday, October 24");
+
+  // Auto-detected location & weather
+  const {
+    fullLocation,
+    weatherSummary,
+    isLoading: weatherLoading,
+  } = useLocationWeather();
 
   useEffect(() => {
     const now = new Date();
@@ -136,7 +145,9 @@ export default function DashboardHomePage() {
   function handlePlanClick() {
     setPlanningActive(true);
     setTimeout(() => {
-      window.location.href = `/plan?occasion=${encodeURIComponent(selectedOccasion.label)}`;
+      const locParam = encodeURIComponent(fullLocation);
+      const weatherParam = encodeURIComponent(weatherSummary);
+      window.location.href = `/plan?occasion=${encodeURIComponent(selectedOccasion.label)}&location=${locParam}&weather=${weatherParam}`;
     }, 200);
   }
 
@@ -156,13 +167,15 @@ export default function DashboardHomePage() {
                 <h1 className="font-headline-lg text-headline-lg text-primary tracking-tight font-medium">
                   {greeting}, {userName}
                 </h1>
-                <div className="flex items-center gap-2 text-on-surface-variant font-label-md text-label-md">
+                <div className="flex items-center gap-2 text-on-surface-variant font-label-md text-label-md flex-wrap">
                   <MapPin className="w-4 h-4 text-secondary flex-shrink-0" />
-                  <span>Lagos, Nigeria</span>
+                  <span>
+                    {weatherLoading ? "Detecting location..." : fullLocation}
+                  </span>
                   <span className="text-outline-variant font-light">·</span>
-                  <CloudRain className="w-4 h-4 text-secondary flex-shrink-0" />
+                  <CloudSun className="w-4 h-4 text-secondary flex-shrink-0" />
                   <span className="text-on-surface font-medium">
-                    31°C · Humid · Rain possible
+                    {weatherLoading ? "Checking weather..." : weatherSummary}
                   </span>
                 </div>
               </div>
