@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const siteUrl = process.env.NEXTAUTH_URL || "https://wardrobe-ai.vercel.app";
+  const siteUrl = process.env.NEXTAUTH_URL || "https://lbd-wardrobe-ai.netlify.app";
   return [
     {
       url: `${siteUrl}`,

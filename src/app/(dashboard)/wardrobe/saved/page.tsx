@@ -61,8 +61,11 @@ type TimelineItem = {
 };
 
 // Categorization helper for filter tabs
-function getOutfitCategory(outfit: SavedOutfit): "work" | "casual" | "traditional" {
-  const text = `${outfit.event || ""} ${outfit.title} ${outfit.vibeDescription || ""}`.toLowerCase();
+function getOutfitCategory(
+  outfit: SavedOutfit,
+): "work" | "casual" | "traditional" {
+  const text =
+    `${outfit.event || ""} ${outfit.title} ${outfit.vibeDescription || ""}`.toLowerCase();
   if (
     text.includes("traditional") ||
     text.includes("church") ||
@@ -91,7 +94,10 @@ function getOutfitCategory(outfit: SavedOutfit): "work" | "casual" | "traditiona
 }
 
 // Badge data helper for each card
-function getCardBadge(outfit: SavedOutfit, category: "work" | "casual" | "traditional") {
+function getCardBadge(
+  outfit: SavedOutfit,
+  category: "work" | "casual" | "traditional",
+) {
   if (category === "work") {
     return {
       icon: Briefcase,
@@ -129,7 +135,9 @@ export default function SavedOutfitsPage() {
   const [userName, setUserName] = useState("Bolu");
   const [outfits, setOutfits] = useState<SavedOutfit[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState<"all" | "work" | "casual" | "traditional">("all");
+  const [activeCategory, setActiveCategory] = useState<
+    "all" | "work" | "casual" | "traditional"
+  >("all");
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -236,8 +244,8 @@ export default function SavedOutfitsPage() {
     // 1. Optimistic wear increment
     setOutfits((prev) =>
       prev.map((o) =>
-        o.id === outfit.id ? { ...o, wearCount: (o.wearCount || 0) + 1 } : o
-      )
+        o.id === outfit.id ? { ...o, wearCount: (o.wearCount || 0) + 1 } : o,
+      ),
     );
 
     // 2. Prepend timeline entry
@@ -275,8 +283,8 @@ export default function SavedOutfitsPage() {
     // 1. Optimistic wear increment
     setOutfits((prev) =>
       prev.map((o) =>
-        o.id === outfit.id ? { ...o, wearCount: (o.wearCount || 0) + 1 } : o
-      )
+        o.id === outfit.id ? { ...o, wearCount: (o.wearCount || 0) + 1 } : o,
+      ),
     );
 
     // 2. Add to timeline
@@ -360,7 +368,8 @@ export default function SavedOutfitsPage() {
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 className="w-4 h-4 text-secondary flex-shrink-0" />
                   <span className="font-label-md text-label-md text-on-surface font-semibold">
-                    {outfits.length} {outfits.length === 1 ? "Archival Look" : "Archival Looks"}
+                    {outfits.length}{" "}
+                    {outfits.length === 1 ? "Archival Look" : "Archival Looks"}
                   </span>
                 </div>
                 <span className="text-outline-variant font-light">|</span>
@@ -481,7 +490,10 @@ export default function SavedOutfitsPage() {
             </div>
           ) : (
             /* Saved Outfits Cards Grid */
-            <section className="grid grid-cols-1 md:grid-cols-2 gap-space-lg" id="outfits-grid">
+            <section
+              className="grid grid-cols-1 md:grid-cols-2 gap-space-lg"
+              id="outfits-grid"
+            >
               {filteredOutfits.map((outfit) => {
                 const category = getOutfitCategory(outfit);
                 const badge = getCardBadge(outfit, category);
@@ -515,7 +527,9 @@ export default function SavedOutfitsPage() {
                             aria-label="Card options"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setOpenDropdownId(openDropdownId === outfit.id ? null : outfit.id);
+                              setOpenDropdownId(
+                                openDropdownId === outfit.id ? null : outfit.id,
+                              );
                             }}
                             className="h-8 w-8 rounded-full bg-surface-container flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors cursor-pointer"
                           >
@@ -542,14 +556,18 @@ export default function SavedOutfitsPage() {
                       {/* Garment Collage Layout */}
                       <div
                         className={`grid ${
-                          outfit.items.length === 2 ? "grid-cols-2" : "grid-cols-3"
+                          outfit.items.length === 2
+                            ? "grid-cols-2"
+                            : "grid-cols-3"
                         } gap-space-xs mb-space-md`}
                       >
                         {outfit.items.slice(0, 3).map((item, idx) => (
                           <div
                             key={item.id || idx}
                             className={`${
-                              outfit.items.length === 2 ? "aspect-[4/3]" : "aspect-[3/4]"
+                              outfit.items.length === 2
+                                ? "aspect-[4/3]"
+                                : "aspect-[3/4]"
                             } rounded-lg overflow-hidden bg-surface-container relative`}
                           >
                             {item.imageUrl ? (
@@ -572,7 +590,8 @@ export default function SavedOutfitsPage() {
 
                       {/* Ensemble composition line */}
                       <p className="font-body-sm text-body-sm text-on-surface-variant truncate mb-space-sm">
-                        {outfit.items.map((i) => i.name).join(" • ") || outfit.vibeDescription}
+                        {outfit.items.map((i) => i.name).join(" • ") ||
+                          outfit.vibeDescription}
                       </p>
 
                       {/* Metadata */}
@@ -584,7 +603,9 @@ export default function SavedOutfitsPage() {
                         <span>•</span>
                         <span
                           className={
-                            wearCount > 0 ? "text-secondary font-semibold" : "text-on-surface-variant"
+                            wearCount > 0
+                              ? "text-secondary font-semibold"
+                              : "text-on-surface-variant"
                           }
                         >
                           {wearCount > 0
@@ -627,7 +648,8 @@ export default function SavedOutfitsPage() {
                   </h2>
                 </div>
                 <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
-                  Quick rotation tracker &amp; wear frequency for {userName} in Lagos
+                  Quick rotation tracker &amp; wear frequency for {userName} in
+                  Lagos
                 </p>
               </div>
 
@@ -647,7 +669,10 @@ export default function SavedOutfitsPage() {
 
             {/* Timeline Entries Container */}
             <div className="bg-surface-container-lowest rounded-xl p-space-md shadow-sm border border-outline-variant/15">
-              <div className="relative pl-6 space-y-space-md" id="timeline-list">
+              <div
+                className="relative pl-6 space-y-space-md"
+                id="timeline-list"
+              >
                 {/* Connecting vertical subtle line */}
                 <div className="absolute left-2.5 top-3 bottom-3 w-0.5 bg-surface-variant rounded-full"></div>
 
@@ -700,7 +725,10 @@ export default function SavedOutfitsPage() {
                 <span className="mx-space-xs text-outline-variant">·</span>
                 <span>Curated Wardrobe Architecture</span>
               </div>
-              <div>© 2025 Wardrobe AI. All rights reserved. Lagos &amp; Global.</div>
+              <div>
+                © {new Date().getFullYear()} Wardrobe AI. All rights reserved.
+                Lagos &amp; Global.
+              </div>
             </div>
           </footer>
         </div>

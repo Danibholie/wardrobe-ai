@@ -5,6 +5,8 @@ const siteUrl = "https://lbd-wardrobe-ai.netlify.app";
 const brandLogoUrl =
   "https://lbd-wardrobe-ai.netlify.app/wardrobe-ai-logo.webp";
 
+const ogImageUrl = `${siteUrl}/og-image.png`;
+
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -64,10 +66,12 @@ export const metadata: Metadata = {
     siteName: "Wardrobe AI",
     images: [
       {
-        url: "https://lh3.googleusercontent.com/aida-public/AB6AXuDyTyR7C-4zaUSuvXIzIq7SvTiDxS0KjoxzQjadYn6XMPksZO-_qdyWdbR3pgs6VpRdAFl7Gl-ZVcRBSMKVT1s7DiMShn8TpuKwkIZWQBUhvn2nmupycaNcJaZdxP-SWQc1DnIOGJSkk19rd5xjY02xstr8vvgUJm3AxrpyqZRnW7Fkaxhcp0EmYzx5iBrnErpokFxvKwAh6W2icEoI0Dqgq7bDzTjA9YlNpx2NE6XWwGRghmSbyS3n",
-        width: 1200,
-        height: 630,
-        alt: "Wardrobe AI Editorial Lookbook",
+        url: "/og-image.png",
+        secureUrl: ogImageUrl,
+        width: 1672,
+        height: 941,
+        alt: "Wardrobe AI · Your wardrobe. Smarter.",
+        type: "image/png",
       },
     ],
   },
@@ -77,7 +81,12 @@ export const metadata: Metadata = {
     description:
       "Intelligent outfit recommendations strictly curated from clothes you already own.",
     images: [
-      "https://lh3.googleusercontent.com/aida-public/AB6AXuDyTyR7C-4zaUSuvXIzIq7SvTiDxS0KjoxzQjadYn6XMPksZO-_qdyWdbR3pgs6VpRdAFl7Gl-ZVcRBSMKVT1s7DiMShn8TpuKwkIZWQBUhvn2nmupycaNcJaZdxP-SWQc1DnIOGJSkk19rd5xjY02xstr8vvgUJm3AxrpyqZRnW7Fkaxhcp0EmYzx5iBrnErpokFxvKwAh6W2icEoI0Dqgq7bDzTjA9YlNpx2NE6XWwGRghmSbyS3n",
+      {
+        url: "/og-image.png",
+        width: 1672,
+        height: 941,
+        alt: "Wardrobe AI · Your wardrobe. Smarter.",
+      },
     ],
   },
 };

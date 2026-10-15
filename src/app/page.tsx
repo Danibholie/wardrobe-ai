@@ -5,14 +5,45 @@ import { redirect } from "next/navigation";
 import { ArrowRight, ShieldCheck } from "lucide-react";
 import { auth } from "@/auth";
 
+const siteUrl = "https://lbd-wardrobe-ai.netlify.app";
+const ogImageUrl = `${siteUrl}/og-image.png`;
+
 export const metadata: Metadata = {
   title: "Wardrobe AI · Stop Wondering What to Wear",
   description:
     "Your wardrobe already has the answer. Intelligent outfit curation strictly from clothes you own, tailored for Lagos weather and occasions.",
   openGraph: {
+    type: "website",
+    locale: "en_NG",
+    url: siteUrl,
+    siteName: "Wardrobe AI",
     title: "Wardrobe AI · Stop Wondering What to Wear",
     description:
       "Your wardrobe already has the answer. Intelligent outfit curation strictly from clothes you own, tailored for Lagos weather and occasions.",
+    images: [
+      {
+        url: "/og-image.png",
+        secureUrl: ogImageUrl,
+        width: 1672,
+        height: 941,
+        alt: "Wardrobe AI · Your wardrobe. Smarter.",
+        type: "image/png",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Wardrobe AI · Stop Wondering What to Wear",
+    description:
+      "Your wardrobe already has the answer. Intelligent outfit curation strictly from clothes you own, tailored for Lagos weather and occasions.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1672,
+        height: 941,
+        alt: "Wardrobe AI · Your wardrobe. Smarter.",
+      },
+    ],
   },
 };
 
@@ -108,6 +139,12 @@ export default async function Home() {
                 <p className="font-body-sm text-body-sm">
                   Designed for weather, occasions, and everyday life in Nigeria.
                 </p>
+              </div>
+              <div className="text-label-sm text-on-surface-variant">
+                © {new Date().getFullYear()} Wardrobe AI. All rights reserved.
+              </div>
+              <div className="text-label-sm text-on-surface-variant">
+                A product by LBD Digital Hub
               </div>
             </footer>
           </section>
