@@ -18,6 +18,7 @@ import {
   ChevronRight,
   Lock,
 } from "lucide-react";
+import { formatAiError } from "@/lib/errors";
 
 type ClothingDetails = {
   name: string;
@@ -150,16 +151,22 @@ export default function AddClothingPage() {
       });
     } catch (err) {
       console.error("Upload or identification error:", err);
-      let errorMsg = "Something went wrong. Please try again.";
-      if (err instanceof Error) {
-        try {
-          const parsed = JSON.parse(err.message);
-          errorMsg = parsed?.error?.message || err.message;
-        } catch {
-          errorMsg = err.message;
-        }
-      }
+      const errorMsg = formatAiError(
+        err,
+        "Failed to identify clothing automatically. You can still enter details manually below."
+      );
       setError(errorMsg);
+      // If photo was successfully uploaded, automatically enable manual mode so user doesn't lose work
+      if (currentImageUrl && !details) {
+        setIsManualMode(true);
+        setDetails({
+          name: "",
+          category: "tops",
+          subcategory: "",
+          color: "",
+          style: "Casual / Smart casual",
+        });
+      }
     } finally {
       setUploading(false);
       setIdentifying(false);

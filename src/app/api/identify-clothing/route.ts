@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { identifyClothing } from "@/lib/ai";
+import { parseAiError } from "@/lib/errors";
 
 export async function POST(request: Request) {
   try {
@@ -29,26 +30,17 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Clothing identification error:", error);
 
-    let message = "An error occurred while identifying clothing.";
-    if (error instanceof Error) {
-      try {
-        const parsed = JSON.parse(error.message);
-        if (parsed?.error?.message) {
-          message = parsed.error.message;
-        } else {
-          message = error.message;
-        }
-      } catch {
-        message = error.message;
-      }
-    }
+    const { friendlyMessage, statusCode } = parseAiError(
+      error,
+      "Failed to identify clothing from this image."
+    );
 
     return Response.json(
       {
         success: false,
-        message,
+        message: friendlyMessage,
       },
-      { status: 500 }
+      { status: statusCode }
     );
   }
 }

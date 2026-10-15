@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { connectDB } from "@/lib/db";
 import WardrobeItem from "@/models/WardrobeItem";
 import { recommendOutfits, WardrobeItemSummary } from "@/lib/ai";
+import { parseAiError } from "@/lib/errors";
 
 export async function POST(request: Request) {
   try {
@@ -11,8 +12,11 @@ export async function POST(request: Request) {
 
     if (!userId) {
       return NextResponse.json(
-        { success: false, message: "Please sign in to receive outfit recommendations." },
-        { status: 401 }
+        {
+          success: false,
+          message: "Please sign in to receive outfit recommendations.",
+        },
+        { status: 401 },
       );
     }
 
@@ -32,8 +36,8 @@ export async function POST(request: Request) {
       typeof body.occasion === "string" && body.occasion.trim()
         ? body.occasion.trim()
         : typeof body.event === "string" && body.event.trim()
-        ? body.event.trim()
-        : "Smart Casual";
+          ? body.event.trim()
+          : "Smart Casual";
 
     const outing =
       typeof body.outing === "string" && body.outing.trim()
@@ -41,9 +45,7 @@ export async function POST(request: Request) {
         : "";
 
     const date =
-      typeof body.date === "string" && body.date.trim()
-        ? body.date.trim()
-        : "";
+      typeof body.date === "string" && body.date.trim() ? body.date.trim() : "";
 
     const timeOfDay =
       typeof body.timeOfDay === "string" && body.timeOfDay.trim()
@@ -58,15 +60,18 @@ export async function POST(request: Request) {
     // Build comprehensive plan descriptor
     const planComponents = [occasion];
     if (outing) planComponents.push(`Specific Outing: ${outing}`);
-    if (date || timeOfDay) planComponents.push(`When: ${[date, timeOfDay].filter(Boolean).join(" ")}`);
+    if (date || timeOfDay)
+      planComponents.push(
+        `When: ${[date, timeOfDay].filter(Boolean).join(" ")}`,
+      );
     const effectiveEvent = planComponents.join(" · ");
 
     const stylePreference =
       typeof body.stylePreference === "string" && body.stylePreference.trim()
         ? body.stylePreference.trim()
         : typeof body.style === "string" && body.style.trim()
-        ? body.style.trim()
-        : "Smart Casual";
+          ? body.style.trim()
+          : "Smart Casual";
 
     const baseVibe =
       typeof body.vibe === "string" && body.vibe.trim()
@@ -100,7 +105,7 @@ export async function POST(request: Request) {
             "Your wardrobe is currently empty. Please add at least 1-2 garments to your collection first so AI can style outfits from them.",
           needsItems: true,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -116,11 +121,11 @@ export async function POST(request: Request) {
 
     if (anchorItemId) {
       const anchorItem = userItems.find(
-        (it) => it._id.toString() === anchorItemId
+        (it) => it._id.toString() === anchorItemId,
       );
       if (anchorItem) {
         contextualVibeParts.push(
-          `Anchor Piece to build around: Must include item ID ${anchorItemId} ("${anchorItem.name}", ${anchorItem.color} ${anchorItem.category}).`
+          `Anchor Piece to build around: Must include item ID ${anchorItemId} ("${anchorItem.name}", ${anchorItem.color} ${anchorItem.category}).`,
         );
       }
     }
@@ -136,9 +141,7 @@ export async function POST(request: Request) {
 
     // CRITICAL SERVER-SIDE ENFORCEMENT:
     // Only items authentically belonging to the user's database can be returned.
-    const itemMap = new Map(
-      wardrobeSummaries.map((it) => [it.id, it])
-    );
+    const itemMap = new Map(wardrobeSummaries.map((it) => [it.id, it]));
 
     const enrichedOutfits = recommendation.outfits
       .map((outfit) => {
@@ -162,24 +165,25 @@ export async function POST(request: Request) {
       criteria: {
         location,
         weather,
-        event,
+        event: effectiveEvent,
+        occasion,
         stylePreference,
         vibe: baseVibe,
       },
     });
   } catch (error) {
     console.error("Outfit recommendation error:", error);
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Failed to generate outfit recommendations.";
+    const { friendlyMessage, statusCode } = parseAiError(
+      error,
+      "Failed to generate outfit recommendations.",
+    );
 
     return NextResponse.json(
       {
         success: false,
-        message,
+        message: friendlyMessage,
       },
-      { status: 500 }
+      { status: statusCode },
     );
   }
 }

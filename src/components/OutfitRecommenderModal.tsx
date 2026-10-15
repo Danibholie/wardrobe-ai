@@ -22,6 +22,7 @@ import {
   Glasses,
   Plus,
 } from "lucide-react";
+import { formatAiError } from "@/lib/errors";
 
 export type WardrobeItem = {
   id: string;
@@ -160,7 +161,7 @@ export function OutfitRecommenderModal({
       setSavedOutfitIndexes({});
       setViewStep("results");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong styling your outfits.");
+      setError(formatAiError(err, "Something went wrong styling your outfits."));
     } finally {
       setGenerating(false);
     }
@@ -466,10 +467,10 @@ export function OutfitRecommenderModal({
                 {error && (
                   <div
                     role="alert"
-                    className="p-3 rounded-lg bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2"
+                    className="p-3.5 rounded-xl bg-red-50/90 border border-red-200 text-xs text-red-800 flex items-start gap-2.5 leading-relaxed shadow-2xs"
                   >
-                    <AlertCircle className="w-4 h-4 shrink-0" />
-                    <span>{error}</span>
+                    <AlertCircle className="w-4 h-4 shrink-0 text-red-600 mt-0.5" />
+                    <span className="flex-1">{error}</span>
                   </div>
                 )}
 

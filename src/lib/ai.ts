@@ -1,4 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
+import { parseAiError } from "@/lib/errors";
 
 function getAI() {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -9,6 +10,8 @@ function getAI() {
 }
 
 const CANDIDATE_MODELS = [
+  "gemini-3.5-flash-lite",
+  "gemini-flash-lite-latest",
   "gemini-3.5-flash",
   "gemini-flash-latest",
   "gemini-3.8-flash",
@@ -143,12 +146,11 @@ agbada, senator, kaftan, ankara, aso-ebi.
     }
   }
 
-  throw (
-    lastError ??
-    new Error(
-      "AI models are currently experiencing high demand. Please try again in a few moments."
-    )
+  const { friendlyMessage } = parseAiError(
+    lastError,
+    "AI models are currently experiencing high demand. Please try again in a few moments."
   );
+  throw new Error(friendlyMessage);
 }
 
 export type WardrobeItemSummary = {
@@ -328,10 +330,9 @@ STRICT RULES:
     }
   }
 
-  throw (
-    lastError ??
-    new Error(
-      "AI recommendation service is momentarily busy. Please try again shortly."
-    )
+  const { friendlyMessage } = parseAiError(
+    lastError,
+    "AI recommendation service is momentarily busy. Please try again shortly."
   );
+  throw new Error(friendlyMessage);
 }
