@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, useEffect, useState } from "react";
+import { ChangeEvent, DragEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -12,6 +12,8 @@ import {
   RefreshCw,
   X,
   Camera,
+  FolderOpen,
+  SwitchCamera,
   Shirt,
   Leaf,
   SlidersHorizontal,
@@ -85,13 +87,167 @@ export default function AddClothingPage() {
   const [saving, setSaving] = useState(false);
   const [isManualMode, setIsManualMode] = useState(false);
 
+  // Camera and file selection state
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [cameraStarting, setCameraStarting] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
+  const [isDragging, setIsDragging] = useState(false);
+
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const nativeCameraInputRef = useRef<HTMLInputElement | null>(null);
+
   useEffect(() => {
     return () => {
       if (previewUrl?.startsWith("blob:")) {
         URL.revokeObjectURL(previewUrl);
       }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+      }
     };
   }, [previewUrl]);
+
+  // Connect camera stream to video element whenever camera is opened
+  useEffect(() => {
+    if (isCameraOpen && streamRef.current && videoRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.play().catch((err) => {
+        console.error("Video play error:", err);
+      });
+    }
+  }, [isCameraOpen]);
+
+  async function startCamera(mode: "environment" | "user" = facingMode) {
+    setCameraError(null);
+    setCameraStarting(true);
+    try {
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error(
+          "Live camera is not supported in this browser. Please use 'Choose from files' or the phone camera option.",
+        );
+      }
+
+      // Stop any existing stream before starting a new one
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((track) => track.stop());
+        streamRef.current = null;
+      }
+
+      const constraints: MediaStreamConstraints = {
+        video: {
+          facingMode: { ideal: mode },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+        },
+        audio: false,
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      streamRef.current = stream;
+      setFacingMode(mode);
+      setIsCameraOpen(true);
+    } catch (err: unknown) {
+      console.error("Camera access error:", err);
+      const errorObj = err as { name?: string; message?: string };
+      if (
+        errorObj.name === "NotAllowedError" ||
+        errorObj.name === "PermissionDeniedError"
+      ) {
+        setCameraError(
+          "Camera access was denied. Please grant permission in your browser or select an image from your files.",
+        );
+      } else if (
+        errorObj.name === "NotFoundError" ||
+        errorObj.name === "DevicesNotFoundError"
+      ) {
+        setCameraError("No camera device was found on your current device.");
+      } else {
+        setCameraError(
+          errorObj.message ||
+            "Could not access camera. You can select an image from your files.",
+        );
+      }
+      setIsCameraOpen(false);
+    } finally {
+      setCameraStarting(false);
+    }
+  }
+
+  function stopCamera() {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setIsCameraOpen(false);
+    setCameraStarting(false);
+  }
+
+  function toggleCameraFacing() {
+    const nextMode = facingMode === "environment" ? "user" : "environment";
+    startCamera(nextMode);
+  }
+
+  function capturePhoto() {
+    if (!videoRef.current) return;
+    const video = videoRef.current;
+    if (!video.videoWidth || !video.videoHeight) return;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    // Flip horizontally if using front/user-facing camera for natural mirror feel
+    if (facingMode === "user") {
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+    }
+
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) return;
+        const file = new File([blob], `garment-snap-${Date.now()}.jpg`, {
+          type: "image/jpeg",
+        });
+        stopCamera();
+        processImage(file);
+      },
+      "image/jpeg",
+      0.92,
+    );
+  }
+
+  function handleDragOver(e: DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setIsDragging(true);
+  }
+
+  function handleDragLeave(e: DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setIsDragging(false);
+  }
+
+  function handleDrop(e: DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+        setError("Please choose a JPG, PNG, or WEBP image.");
+        return;
+      }
+      processImage(file);
+    }
+  }
 
   async function processImage(file: File) {
     setError(null);
@@ -153,7 +309,7 @@ export default function AddClothingPage() {
       console.error("Upload or identification error:", err);
       const errorMsg = formatAiError(
         err,
-        "Failed to identify clothing automatically. You can still enter details manually below."
+        "Failed to identify clothing automatically. You can still enter details manually below.",
       );
       setError(errorMsg);
       // If photo was successfully uploaded, automatically enable manual mode so user doesn't lose work
@@ -245,6 +401,7 @@ export default function AddClothingPage() {
   }
 
   function resetSelection() {
+    stopCamera();
     setImage(null);
     setPreviewUrl(null);
     setUploadedUrl(null);
@@ -289,7 +446,7 @@ export default function AddClothingPage() {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-space-sm mb-space-lg">
             <div>
               <div className="flex items-center gap-space-xs text-secondary mb-space-xs">
-                <Sparkles className="w-4 h-4 text-secondary flex-shrink-0" />
+                <Sparkles className="w-4 h-4 text-secondary shrink-0" />
                 <span className="font-label-caps text-label-caps uppercase tracking-wider font-bold">
                   Garment Digitizer · Studio Engine
                 </span>
@@ -338,37 +495,225 @@ export default function AddClothingPage() {
             <div className="lg:col-span-6 flex flex-col gap-space-md">
               <div className="relative bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden p-space-md border border-outline-variant/20">
                 {!previewUrl ? (
-                  /* Empty Upload Stage */
-                  <label className="flex min-h-[380px] sm:min-h-[440px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-outline-variant/60 hover:border-primary/60 bg-surface-container-low/50 p-6 text-center transition-all group">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-surface-container-high text-primary transition-transform group-hover:scale-105 shadow-xs">
-                      <Camera className="w-7 h-7" />
+                  isCameraOpen ? (
+                    /* Live In-App Camera Viewfinder */
+                    <div className="relative w-full aspect-4/5 sm:aspect-1/1 md:aspect-4/5 bg-black rounded-xl overflow-hidden flex flex-col justify-between shadow-md border border-outline-variant/30">
+                      {/* Video stream element */}
+                      <video
+                        ref={videoRef}
+                        playsInline
+                        autoPlay
+                        muted
+                        className={`w-full h-full object-cover ${
+                          facingMode === "user" ? "scale-x-[-1]" : ""
+                        }`}
+                      />
+
+                      {/* Viewfinder Top Bar */}
+                      <div className="absolute top-0 inset-x-0 p-4 bg-linear-to-b from-black/75 to-transparent flex items-center justify-between z-10 text-white">
+                        <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full text-xs font-medium border border-white/10">
+                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                          <span>Live Camera Studio</span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={toggleCameraFacing}
+                            title="Flip camera"
+                            className="w-9 h-9 rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-md flex items-center justify-center transition-colors cursor-pointer border border-white/10"
+                          >
+                            <SwitchCamera className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={stopCamera}
+                            title="Close camera"
+                            className="w-9 h-9 rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-md flex items-center justify-center transition-colors cursor-pointer border border-white/10"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Viewfinder Reticle / Framing Guides */}
+                      <div className="absolute inset-8 pointer-events-none flex flex-col justify-between z-10">
+                        <div className="flex justify-between">
+                          <div className="w-6 h-6 border-t-2 border-l-2 border-white/70 rounded-tl-sm" />
+                          <div className="w-6 h-6 border-t-2 border-r-2 border-white/70 rounded-tr-sm" />
+                        </div>
+                        <div className="text-center">
+                          <span className="bg-black/50 text-white/90 text-xs px-3.5 py-1.5 rounded-full backdrop-blur-md border border-white/10 shadow-sm">
+                            Frame your garment in the center
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <div className="w-6 h-6 border-b-2 border-l-2 border-white/70 rounded-bl-sm" />
+                          <div className="w-6 h-6 border-b-2 border-r-2 border-white/70 rounded-br-sm" />
+                        </div>
+                      </div>
+
+                      {/* Viewfinder Bottom Shutter Controls */}
+                      <div className="absolute bottom-0 inset-x-0 p-6 bg-linear-to-t from-black/85 via-black/40 to-transparent flex flex-col items-center gap-2 z-10">
+                        <button
+                          type="button"
+                          onClick={capturePhoto}
+                          title="Snap Photo"
+                          className="group relative w-18 h-18 rounded-full border-4 border-white/90 bg-white/20 hover:bg-white/40 active:scale-95 transition-all flex items-center justify-center shadow-xl cursor-pointer"
+                        >
+                          <span className="w-13 h-13 rounded-full bg-white transition-transform group-hover:scale-95 group-active:scale-90" />
+                        </button>
+                        <span className="text-white/80 text-xs font-medium tracking-wide">
+                          Tap to snap photo
+                        </span>
+                      </div>
                     </div>
+                  ) : (
+                    /* Dual Choice Hub: Camera Snap vs File Upload */
+                    <div
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                      className={`min-h-95 sm:min-h-110 flex flex-col justify-between rounded-xl border-2 border-dashed p-6 transition-all ${
+                        isDragging
+                          ? "border-primary bg-primary/5 scale-[0.99]"
+                          : "border-outline-variant/60 bg-surface-container-low/40"
+                      }`}
+                    >
+                      {/* Top Header */}
+                      <div className="text-center pt-2">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container-high text-primary text-xs font-semibold uppercase tracking-wider mb-2">
+                          <Camera className="w-3.5 h-3.5 text-secondary" />
+                          <span>Garment Input</span>
+                        </div>
+                        <h3 className="font-headline-sm text-headline-sm text-primary font-medium">
+                          Add a clothing photo
+                        </h3>
+                        <p className="mt-1 max-w-sm mx-auto font-body-sm text-body-sm text-on-surface-variant">
+                          Snap a photo directly with your camera, or choose an existing photo from your device.
+                        </p>
+                      </div>
 
-                    <h3 className="mt-4 font-headline-sm text-headline-sm text-primary font-medium">
-                      Upload a clothing photo
-                    </h3>
+                      {/* Camera error message if permission failed */}
+                      {cameraError && (
+                        <div className="my-2 p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-start gap-2 animate-in fade-in">
+                          <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                          <div className="flex-1">
+                            <p className="font-medium">{cameraError}</p>
+                            <p className="mt-0.5 text-red-600">
+                              You can select a photo from your files below instead.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setCameraError(null)}
+                            className="text-red-500 hover:text-red-700 cursor-pointer"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
 
-                    <p className="mt-1.5 max-w-sm font-body-sm text-body-sm text-on-surface-variant">
-                      Choose a clear photo showing one item. A plain background
-                      works best.
-                    </p>
+                      {/* Dual Action Options Grid */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 my-4">
+                        {/* OPTION 1: Snap Photo with Camera */}
+                        <div className="flex flex-col justify-between p-4 rounded-xl bg-surface-container-lowest border border-outline-variant/25 shadow-xs hover:border-primary/50 hover:shadow-sm transition-all group">
+                          <div className="space-y-2">
+                            <div className="w-11 h-11 rounded-lg bg-primary/10 text-primary flex items-center justify-center transition-transform group-hover:scale-105">
+                              <Camera className="w-5 h-5 text-primary" />
+                            </div>
+                            <div>
+                              <h4 className="font-title-md text-title-md text-on-surface font-semibold">
+                                Snap with camera
+                              </h4>
+                              <p className="font-body-sm text-body-sm text-on-surface-variant text-xs mt-0.5">
+                                Open the camera viewfinder directly inside the app to capture your garment.
+                              </p>
+                            </div>
+                          </div>
 
-                    <span className="mt-5 inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 font-title-md text-title-md text-on-primary group-hover:bg-primary-container transition-all shadow-xs">
-                      <UploadCloud className="w-4 h-4" />
-                      <span>Choose photo</span>
-                    </span>
+                          <div className="pt-4 flex flex-col gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => startCamera()}
+                              disabled={cameraStarting}
+                              className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-title-md text-sm text-on-primary hover:bg-primary-container transition-all shadow-xs cursor-pointer disabled:opacity-75"
+                            >
+                              {cameraStarting ? (
+                                <>
+                                  <Loader2 className="w-4 h-4 animate-spin" />
+                                  <span>Starting camera...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Camera className="w-4 h-4" />
+                                  <span>Snap photo</span>
+                                </>
+                              )}
+                            </button>
 
-                    <p className="mt-3 font-label-caps text-label-caps text-outline uppercase tracking-wider">
-                      JPG, PNG or WEBP · Single garment
-                    </p>
+                            {/* Native mobile camera fallback trigger */}
+                            <label className="text-center text-xs text-secondary hover:underline cursor-pointer py-1 font-medium">
+                              <span>Or use device camera app</span>
+                              <input
+                                ref={nativeCameraInputRef}
+                                type="file"
+                                accept="image/*"
+                                capture="environment"
+                                onChange={handleFileChange}
+                                className="hidden"
+                              />
+                            </label>
+                          </div>
+                        </div>
 
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      onChange={handleFileChange}
-                      className="hidden"
-                    />
-                  </label>
+                        {/* OPTION 2: Choose from Files */}
+                        <div className="flex flex-col justify-between p-4 rounded-xl bg-surface-container-lowest border border-outline-variant/25 shadow-xs hover:border-primary/50 hover:shadow-sm transition-all group">
+                          <div className="space-y-2">
+                            <div className="w-11 h-11 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center transition-transform group-hover:scale-105">
+                              <FolderOpen className="w-5 h-5 text-secondary" />
+                            </div>
+                            <div>
+                              <h4 className="font-title-md text-title-md text-on-surface font-semibold">
+                                Choose from files
+                              </h4>
+                              <p className="font-body-sm text-body-sm text-on-surface-variant text-xs mt-0.5">
+                                Select an image from your device storage, photo gallery, or folders.
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="pt-4 flex flex-col gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => fileInputRef.current?.click()}
+                              className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-surface-container-high px-4 py-2.5 font-title-md text-sm text-on-surface hover:bg-surface-container-highest transition-all shadow-xs cursor-pointer border border-outline-variant/30"
+                            >
+                              <UploadCloud className="w-4 h-4 text-primary" />
+                              <span>Select from file</span>
+                            </button>
+                            <span className="text-center text-xs text-on-surface-variant py-1">
+                              Supports JPG, PNG, WEBP
+                            </span>
+                            <input
+                              ref={fileInputRef}
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp"
+                              onChange={handleFileChange}
+                              className="hidden"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Bottom Drop Prompt */}
+                      <div className="text-center pt-2 border-t border-outline-variant/20">
+                        <p className="font-label-caps text-label-caps text-outline uppercase tracking-wider text-[11px]">
+                          Or drag & drop an image here · Plain background recommended
+                        </p>
+                      </div>
+                    </div>
+                  )
                 ) : (
                   /* Active Image Canvas */
                   <>
@@ -404,19 +749,27 @@ export default function AddClothingPage() {
 
                     {/* Camera Retake & Remove Overlay Actions */}
                     <div className="absolute top-6 right-6 z-20 flex items-center gap-1.5">
-                      <label
-                        className="w-9 h-9 rounded-full bg-surface/90 hover:bg-surface text-on-surface-variant hover:text-primary backdrop-blur-md flex items-center justify-center transition-all shadow-xs cursor-pointer border border-outline-variant/20"
-                        title="Retake or replace photo"
+                      <button
+                        onClick={() => {
+                          resetSelection();
+                          startCamera();
+                        }}
+                        disabled={uploading || identifying}
+                        className="w-9 h-9 rounded-full bg-surface/90 hover:bg-surface text-on-surface-variant hover:text-primary backdrop-blur-md flex items-center justify-center transition-all shadow-xs cursor-pointer border border-outline-variant/20 disabled:opacity-50"
+                        title="Snap another photo"
+                        type="button"
                       >
-                        <RefreshCw className="w-4 h-4" />
-                        <input
-                          type="file"
-                          accept="image/jpeg,image/png,image/webp"
-                          onChange={handleFileChange}
-                          className="hidden"
-                          disabled={uploading || identifying}
-                        />
-                      </label>
+                        <Camera className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploading || identifying}
+                        className="w-9 h-9 rounded-full bg-surface/90 hover:bg-surface text-on-surface-variant hover:text-primary backdrop-blur-md flex items-center justify-center transition-all shadow-xs cursor-pointer border border-outline-variant/20 disabled:opacity-50"
+                        title="Choose different file"
+                        type="button"
+                      >
+                        <UploadCloud className="w-4 h-4" />
+                      </button>
                       <button
                         onClick={resetSelection}
                         disabled={uploading || identifying}
@@ -429,7 +782,7 @@ export default function AddClothingPage() {
                     </div>
 
                     {/* Image Canvas */}
-                    <div className="relative w-full aspect-[4/5] bg-surface-container-low rounded-lg overflow-hidden flex items-center justify-center group">
+                    <div className="relative w-full aspect-4/5 bg-surface-container-low rounded-lg overflow-hidden flex items-center justify-center group">
                       <img
                         className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                         alt={details?.name || "Selected clothing piece"}
@@ -496,30 +849,46 @@ export default function AddClothingPage() {
                       )}
                     </div>
 
-                    {/* Switch Photo Trigger Strip */}
-                    <label className="mt-space-md bg-surface-container-low rounded-lg p-space-md flex items-center justify-between gap-space-sm hover:bg-surface-container transition-colors cursor-pointer border border-outline-variant/15">
-                      <div className="flex items-center gap-space-sm">
-                        <div className="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-primary">
-                          <Camera className="w-5 h-5 text-primary" />
+                    {/* Switch Photo Action Strip */}
+                    <div className="mt-space-md bg-surface-container-low rounded-lg p-space-md flex flex-col sm:flex-row items-center justify-between gap-space-sm border border-outline-variant/15">
+                      <div className="flex items-center gap-space-sm w-full sm:w-auto">
+                        <div className="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-primary shrink-0">
+                          <RefreshCw className="w-5 h-5 text-primary" />
                         </div>
                         <div>
                           <p className="font-title-md text-title-md text-on-surface leading-tight font-medium">
-                            Switch photo
+                            Change photo
                           </p>
-                          <p className="font-body-sm text-body-sm text-on-surface-variant">
-                            Camera snapshot or PNG / JPG files
+                          <p className="font-body-sm text-body-sm text-on-surface-variant text-xs">
+                            Snap a new photo or select from your files
                           </p>
                         </div>
                       </div>
-                      <ChevronRight className="w-5 h-5 text-on-surface-variant" />
-                      <input
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp"
-                        onChange={handleFileChange}
-                        className="hidden"
-                        disabled={uploading || identifying}
-                      />
-                    </label>
+
+                      <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            resetSelection();
+                            startCamera();
+                          }}
+                          disabled={uploading || identifying}
+                          className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-primary font-label-md text-xs transition-colors cursor-pointer border border-outline-variant/30"
+                        >
+                          <Camera className="w-3.5 h-3.5" />
+                          <span>Snap new</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={uploading || identifying}
+                          className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-primary hover:bg-primary-container text-on-primary font-label-md text-xs transition-colors cursor-pointer shadow-xs"
+                        >
+                          <FolderOpen className="w-3.5 h-3.5" />
+                          <span>From files</span>
+                        </button>
+                      </div>
+                    </div>
                   </>
                 )}
               </div>

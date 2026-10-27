@@ -110,7 +110,23 @@ export default function WardrobePage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const [stylistOpen, setStylistOpen] = useState(false);
-  const [stylistAnchorItem, setStylistAnchorItem] = useState<string | undefined>(undefined);
+  const [stylistAnchorItem, setStylistAnchorItem] = useState<
+    string | undefined
+  >(undefined);
+  const [activeCardId, setActiveCardId] = useState<string | null>(null);
+
+  useEffect(() => {
+    function handleDocumentClick(e: MouseEvent) {
+      const target = e.target as HTMLElement | null;
+      if (!target?.closest(".wardrobe-card")) {
+        setActiveCardId(null);
+      }
+    }
+    document.addEventListener("click", handleDocumentClick);
+    return () => {
+      document.removeEventListener("click", handleDocumentClick);
+    };
+  }, []);
 
   function openStylist(anchorId?: string) {
     setStylistAnchorItem(anchorId);
@@ -120,7 +136,10 @@ export default function WardrobePage() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
-      if (params.get("stylist") === "open" || params.get("openStylist") === "true") {
+      if (
+        params.get("stylist") === "open" ||
+        params.get("openStylist") === "true"
+      ) {
         setStylistOpen(true);
       }
     }
@@ -591,10 +610,18 @@ export default function WardrobePage() {
             >
               {filteredItems.map((item) => {
                 const colorHex = getColorHex(item.color);
+                const isCardActive = activeCardId === item.id;
                 return (
                   <div
                     key={item.id}
-                    className="wardrobe-card group flex flex-col bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border border-outline-variant/15"
+                    onClick={() =>
+                      setActiveCardId((prev) => (prev === item.id ? null : item.id))
+                    }
+                    className={`wardrobe-card group flex flex-col bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 border cursor-pointer ${
+                      isCardActive
+                        ? "border-primary/40 ring-2 ring-primary/20 shadow-md"
+                        : "border-outline-variant/15"
+                    }`}
                     data-cat={item.category}
                     data-color={item.color}
                     data-title={item.name}
@@ -615,28 +642,33 @@ export default function WardrobePage() {
                       </div>
 
                       {/* Card Action Overlay Buttons */}
-                      <div className="absolute top-2.5 right-2.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <div
+                        className={`absolute top-2.5 right-2.5 flex items-center gap-1 transition-opacity duration-200 z-10 ${
+                          isCardActive
+                            ? "opacity-100 pointer-events-auto"
+                            : "opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto"
+                        }`}
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <button
                           type="button"
-                          onClick={() => openStylist(item.id)}
-                          className="w-8 h-8 rounded-full bg-surface/90 hover:bg-surface text-secondary flex items-center justify-center transition-colors shadow-xs cursor-pointer"
-                          title="Style an outfit around this piece"
-                        >
-                          <Sparkles className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => openEditForm(item)}
-                          className="w-8 h-8 rounded-full bg-surface/90 hover:bg-surface text-primary flex items-center justify-center transition-colors shadow-xs cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEditForm(item);
+                          }}
+                          className="w-8 h-8 rounded-full bg-surface/90 hover:bg-surface text-primary flex items-center justify-center transition-colors shadow-xs cursor-pointer active:scale-95"
                           title="Edit clothing"
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleDelete(item)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(item);
+                          }}
                           disabled={deletingId === item.id}
-                          className="w-8 h-8 rounded-full bg-surface/90 hover:bg-red-50 text-red-600 flex items-center justify-center transition-colors shadow-xs cursor-pointer disabled:opacity-50"
+                          className="w-8 h-8 rounded-full bg-surface/90 hover:bg-red-50 text-red-600 flex items-center justify-center transition-colors shadow-xs cursor-pointer disabled:opacity-50 active:scale-95"
                           title="Delete clothing"
                         >
                           {deletingId === item.id ? (

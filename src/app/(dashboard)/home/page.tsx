@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   MapPin,
-  CloudRain,
   CloudSun,
   Calendar,
   Sparkles,
@@ -14,7 +13,6 @@ import {
   Shirt,
   Plus,
   Loader2,
-  CheckCircle2,
 } from "lucide-react";
 import { OutfitRecommenderModal } from "@/components/OutfitRecommenderModal";
 import { useLocationWeather } from "@/hooks/useLocationWeather";
@@ -48,7 +46,10 @@ const OCCASIONS = [
   { label: "Church", value: "Sunday Best / Religious Service & Fellowship" },
   { label: "Date", value: "Date Night / Upscale Restaurant Dinner" },
   { label: "Hangout", value: "Casual Weekend Brunch & Café Outing" },
-  { label: "Wedding", value: "Owambe / Traditional Nigerian Wedding & Reception" },
+  {
+    label: "Wedding",
+    value: "Owambe / Traditional Nigerian Wedding & Reception",
+  },
   { label: "Other", value: "Smart Casual / Day Outing" },
 ];
 
@@ -62,11 +63,15 @@ export default function DashboardHomePage() {
   const [selectedOccasion, setSelectedOccasion] = useState(OCCASIONS[0]);
   const [planningActive, setPlanningActive] = useState(false);
   const [stylistOpen, setStylistOpen] = useState(false);
-  const [anchorItemId, setAnchorItemId] = useState<string | undefined>(undefined);
+  const [anchorItemId, setAnchorItemId] = useState<string | undefined>(
+    undefined,
+  );
 
   // Dynamic time-based greeting and date
   const [greeting, setGreeting] = useState("Good morning");
-  const [currentDateFormatted, setCurrentDateFormatted] = useState("Thursday, October 24");
+  const [currentDateFormatted, setCurrentDateFormatted] = useState(
+    "Thursday, October 24",
+  );
 
   // Auto-detected location & weather
   const {
@@ -199,7 +204,8 @@ export default function DashboardHomePage() {
                   What are you wearing today?
                 </h2>
                 <p className="font-body-md text-body-md text-on-surface-variant">
-                  Choose an occasion and let AI curate a look from clothes you own.
+                  Choose an occasion and let AI curate a look from clothes you
+                  own.
                 </p>
               </div>
 
@@ -208,7 +214,10 @@ export default function DashboardHomePage() {
                 <label className="font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant font-semibold">
                   Select Occasion
                 </label>
-                <div className="flex flex-wrap gap-2 pt-1" id="occasion-container">
+                <div
+                  className="flex flex-wrap gap-2 pt-1"
+                  id="occasion-container"
+                >
                   {OCCASIONS.map((occ) => {
                     const isSelected = selectedOccasion.label === occ.label;
                     return (
@@ -261,7 +270,7 @@ export default function DashboardHomePage() {
           <section className="flex flex-col gap-space-md">
             <div className="flex items-end justify-between">
               <div className="flex items-baseline gap-space-sm">
-                <h2 className="font-headline-md text-headline-md text-primary font-medium">
+                <h2 className="font-headline-sm text-headline-sm md:text-headline-md text-primary font-medium">
                   Your wardrobe
                 </h2>
                 <span className="px-2.5 py-0.5 bg-surface-container-high rounded-full font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider font-semibold">
@@ -270,7 +279,7 @@ export default function DashboardHomePage() {
               </div>
               <Link
                 href="/wardrobe"
-                className="group inline-flex items-center gap-1 font-title-md text-title-md text-secondary hover:text-primary transition-colors cursor-pointer"
+                className="group inline-flex items-center gap-1 font-title-md text-label-md md:text-title-md text-secondary hover:text-primary transition-colors cursor-pointer"
               >
                 <span>Browse all items</span>
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
@@ -302,7 +311,8 @@ export default function DashboardHomePage() {
                       Your wardrobe catalog is empty
                     </h3>
                     <p className="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
-                      Upload your clothes so our AI stylist can create personalized ensembles.
+                      Upload your clothes so our AI stylist can create
+                      personalized ensembles.
                     </p>
                   </div>
                 </div>
@@ -318,11 +328,11 @@ export default function DashboardHomePage() {
               <div className="relative -mx-margin-mobile md:-mx-margin px-margin-mobile md:px-margin overflow-x-auto no-scrollbar pb-2">
                 <div className="flex gap-space-md min-w-max">
                   {wardrobeItems.slice(0, 10).map((item) => (
-                    <div
+                    <Link
                       key={item.id}
-                      onClick={() => handleItemClick(item.id)}
+                      href="/wardrobe"
                       className="group flex flex-col w-48 bg-surface-container-lowest rounded-xl p-3 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer border border-outline-variant/15"
-                      title="Click to style an outfit with this item"
+                      title={item.name}
                     >
                       <div className="relative w-full aspect-square rounded-lg bg-surface-container-low overflow-hidden mb-3">
                         {item.imageUrl ? (
@@ -345,9 +355,12 @@ export default function DashboardHomePage() {
                         {item.name}
                       </span>
                       <span className="font-body-sm text-body-sm text-on-surface-variant truncate capitalize">
-                        {item.subcategory || item.color || item.style || "Versatile piece"}
+                        {item.subcategory ||
+                          item.color ||
+                          item.style ||
+                          "Versatile piece"}
                       </span>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               </div>
@@ -389,7 +402,8 @@ export default function DashboardHomePage() {
                   No saved ensembles yet
                 </h3>
                 <p className="font-body-md text-body-md text-on-surface-variant max-w-md mx-auto">
-                  When you plan an outfit above, you can save your favorite looks to build your personal capsule archive.
+                  When you plan an outfit above, you can save your favorite
+                  looks to build your personal capsule archive.
                 </p>
                 <button
                   type="button"
@@ -414,10 +428,13 @@ export default function DashboardHomePage() {
                         </span>
                         <span className="font-body-sm text-body-sm text-on-surface-variant">
                           Saved{" "}
-                          {new Date(outfit.createdAt).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                          })}
+                          {new Date(outfit.createdAt).toLocaleDateString(
+                            "en-US",
+                            {
+                              month: "short",
+                              day: "numeric",
+                            },
+                          )}
                         </span>
                       </div>
                       <div>
@@ -425,7 +442,8 @@ export default function DashboardHomePage() {
                           {outfit.title}
                         </h3>
                         <p className="font-body-md text-body-md text-on-surface-variant mt-1 line-clamp-1">
-                          {outfit.items.map((i) => i.name).join(" + ") || outfit.vibeDescription}
+                          {outfit.items.map((i) => i.name).join(" + ") ||
+                            outfit.vibeDescription}
                         </p>
                       </div>
                     </div>
@@ -436,8 +454,8 @@ export default function DashboardHomePage() {
                         outfit.items.length >= 3
                           ? "grid-cols-3"
                           : outfit.items.length === 2
-                          ? "grid-cols-2"
-                          : "grid-cols-1"
+                            ? "grid-cols-2"
+                            : "grid-cols-1"
                       }`}
                     >
                       {outfit.items.slice(0, 3).map((item, idx) => (

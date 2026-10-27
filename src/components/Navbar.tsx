@@ -155,13 +155,13 @@ export function Navbar({ user }: NavbarProps) {
                 </div>
 
                 {/* Desktop Sign Out Button (Visible on md+ screens) */}
-                <div className="hidden md:flex items-center">
+                {/* <div className="hidden md:flex items-center">
                   <SignOutButton
                     variant="desktop"
                     label="Sign out"
                     className="text-xs"
                   />
-                </div>
+                </div> */}
 
                 {/* Avatar with dropdown trigger (Desktop + Mobile) */}
                 <div className="relative" ref={desktopMenuRef}>
