@@ -15,10 +15,12 @@ import {
   FolderOpen,
   SwitchCamera,
   Shirt,
-  Leaf,
   SlidersHorizontal,
   ChevronRight,
   Lock,
+  Grid,
+  Zap,
+  ZapOff,
 } from "lucide-react";
 import { formatAiError } from "@/lib/errors";
 
@@ -91,7 +93,13 @@ export default function AddClothingPage() {
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [cameraStarting, setCameraStarting] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
-  const [facingMode, setFacingMode] = useState<"environment" | "user">("environment");
+  const [facingMode, setFacingMode] = useState<"environment" | "user">(
+    "environment",
+  );
+  const [hasTorch, setHasTorch] = useState(false);
+  const [torchOn, setTorchOn] = useState(false);
+  const [showGrid, setShowGrid] = useState(true);
+  const [shutterFlashing, setShutterFlashing] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -119,6 +127,32 @@ export default function AddClothingPage() {
       });
     }
   }, [isCameraOpen]);
+
+  // Lock background scroll when full-screen viewfinder is open
+  useEffect(() => {
+    if (isCameraOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [isCameraOpen]);
+
+  // Keyboard accessibility: Escape to close camera, Space/Enter to capture photo
+  useEffect(() => {
+    if (!isCameraOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        stopCamera();
+      } else if (e.key === " " || e.key === "Enter") {
+        e.preventDefault();
+        capturePhoto();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isCameraOpen, facingMode]);
 
   async function startCamera(mode: "environment" | "user" = facingMode) {
     setCameraError(null);
@@ -148,6 +182,20 @@ export default function AddClothingPage() {
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       streamRef.current = stream;
       setFacingMode(mode);
+
+      // Check if torch/flashlight is supported
+      const videoTrack = stream.getVideoTracks()[0];
+      if (videoTrack && typeof videoTrack.getCapabilities === "function") {
+        const capabilities = videoTrack.getCapabilities() as {
+          torch?: boolean;
+        };
+        setHasTorch(Boolean(capabilities?.torch));
+        setTorchOn(false);
+      } else {
+        setHasTorch(false);
+        setTorchOn(false);
+      }
+
       setIsCameraOpen(true);
     } catch (err: unknown) {
       console.error("Camera access error:", err);
@@ -184,6 +232,8 @@ export default function AddClothingPage() {
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
+    setTorchOn(false);
+    setHasTorch(false);
     setIsCameraOpen(false);
     setCameraStarting(false);
   }
@@ -193,16 +243,45 @@ export default function AddClothingPage() {
     startCamera(nextMode);
   }
 
+  async function toggleTorch() {
+    if (!streamRef.current) return;
+    const track = streamRef.current.getVideoTracks()[0];
+    if (!track) return;
+    try {
+      const nextTorch = !torchOn;
+      // @ts-expect-error torch is not in standard MediaTrackConstraints TypeScript definitions
+      await track.applyConstraints({ advanced: [{ torch: nextTorch }] });
+      setTorchOn(nextTorch);
+    } catch (err) {
+      console.error("Torch error:", err);
+    }
+  }
+
   function capturePhoto() {
     if (!videoRef.current) return;
     const video = videoRef.current;
     if (!video.videoWidth || !video.videoHeight) return;
 
+    // Haptic feedback if available
+    if (typeof navigator !== "undefined" && navigator.vibrate) {
+      try {
+        navigator.vibrate(50);
+      } catch {
+        // Ignore if restricted
+      }
+    }
+
+    // Trigger visual shutter flash effect
+    setShutterFlashing(true);
+
     const canvas = document.createElement("canvas");
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    if (!ctx) {
+      setShutterFlashing(false);
+      return;
+    }
 
     // Flip horizontally if using front/user-facing camera for natural mirror feel
     if (facingMode === "user") {
@@ -214,12 +293,19 @@ export default function AddClothingPage() {
 
     canvas.toBlob(
       (blob) => {
-        if (!blob) return;
+        if (!blob) {
+          setShutterFlashing(false);
+          return;
+        }
         const file = new File([blob], `garment-snap-${Date.now()}.jpg`, {
           type: "image/jpeg",
         });
-        stopCamera();
-        processImage(file);
+
+        setTimeout(() => {
+          setShutterFlashing(false);
+          stopCamera();
+          processImage(file);
+        }, 140);
       },
       "image/jpeg",
       0.92,
@@ -429,6 +515,203 @@ export default function AddClothingPage() {
 
   return (
     <main className="w-full pt-20 pb-24 md:pb-12 bg-background min-h-screen">
+      {/* Full-Screen Immersive Camera Viewfinder Modal */}
+      {isCameraOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Camera viewfinder"
+          className="fixed inset-0 z-50 bg-black flex flex-col justify-between overflow-hidden select-none touch-none h-screen h-[100dvh]"
+        >
+          {/* Full Screen Live Video Element */}
+          <div className="absolute inset-0 z-0 bg-black flex items-center justify-center overflow-hidden">
+            <video
+              ref={videoRef}
+              playsInline
+              autoPlay
+              muted
+              onLoadedMetadata={(e) => {
+                (e.target as HTMLVideoElement).play().catch(() => {});
+              }}
+              className={`w-full h-full object-cover ${
+                facingMode === "user" ? "scale-x-[-1]" : ""
+              }`}
+            />
+          </div>
+
+          {/* Shutter Flash Animation Overlay */}
+          {shutterFlashing && (
+            <div className="absolute inset-0 bg-white z-40 pointer-events-none transition-opacity duration-150 animate-out fade-out" />
+          )}
+
+          {/* Subtle Contrast Gradients for Controls */}
+          <div className="absolute top-0 inset-x-0 h-32 bg-linear-to-b from-black/85 via-black/40 to-transparent pointer-events-none z-10" />
+          <div className="absolute bottom-0 inset-x-0 h-52 bg-linear-to-t from-black/95 via-black/55 to-transparent pointer-events-none z-10" />
+
+          {/* Top Header Bar */}
+          <div className="relative z-20 flex items-center justify-between px-4 sm:px-6 pt-safe pt-4 pb-2">
+            {/* Studio Tag */}
+            <div className="flex items-center gap-2 bg-black/45 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/15 text-white shadow-sm">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-xs font-semibold uppercase tracking-wider">
+                Studio Viewfinder
+              </span>
+            </div>
+
+            {/* Top Action Buttons Cluster */}
+            <div className="flex items-center gap-2">
+              {/* Torch Toggle (if supported on device) */}
+              {hasTorch && (
+                <button
+                  type="button"
+                  onClick={toggleTorch}
+                  title={torchOn ? "Turn flash off" : "Turn flash on"}
+                  className={`w-10 h-10 rounded-full backdrop-blur-md flex items-center justify-center transition-all border cursor-pointer active:scale-95 ${
+                    torchOn
+                      ? "bg-amber-400 text-black border-amber-300 shadow-md"
+                      : "bg-black/45 text-white hover:bg-black/65 border-white/15"
+                  }`}
+                >
+                  {torchOn ? (
+                    <Zap className="w-4 h-4 fill-current" />
+                  ) : (
+                    <ZapOff className="w-4 h-4" />
+                  )}
+                </button>
+              )}
+
+              {/* Grid / Guide Toggle */}
+              <button
+                type="button"
+                onClick={() => setShowGrid((prev) => !prev)}
+                title={showGrid ? "Hide framing guides" : "Show framing guides"}
+                className={`w-10 h-10 rounded-full backdrop-blur-md flex items-center justify-center transition-all border cursor-pointer active:scale-95 ${
+                  showGrid
+                    ? "bg-white/30 text-white border-white/40"
+                    : "bg-black/45 text-white/70 hover:bg-black/65 border-white/15"
+                }`}
+              >
+                <Grid className="w-4 h-4" />
+              </button>
+
+              {/* Flip Camera */}
+              <button
+                type="button"
+                onClick={toggleCameraFacing}
+                title="Flip camera"
+                className="w-10 h-10 rounded-full bg-black/45 hover:bg-black/65 text-white backdrop-blur-md flex items-center justify-center transition-all border border-white/15 cursor-pointer active:scale-95"
+              >
+                <SwitchCamera className="w-4 h-4" />
+              </button>
+
+              {/* Close Viewfinder */}
+              <button
+                type="button"
+                onClick={stopCamera}
+                title="Close camera (Esc)"
+                className="w-10 h-10 rounded-full bg-black/45 hover:bg-black/65 text-white backdrop-blur-md flex items-center justify-center transition-all border border-white/15 cursor-pointer active:scale-95"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Center Framing Guides */}
+          <div className="relative z-20 flex-1 flex flex-col items-center justify-center p-6 pointer-events-none">
+            {showGrid && (
+              <div className="relative w-full max-w-sm sm:max-w-md aspect-3/4 max-h-[62vh] rounded-2xl border border-white/20 flex flex-col justify-between p-4 shadow-2xl transition-opacity">
+                {/* Subtle rule-of-thirds grid line indicators */}
+                <div className="absolute inset-0 grid grid-cols-3 grid-rows-3 pointer-events-none opacity-25">
+                  <div className="border-r border-b border-white" />
+                  <div className="border-r border-b border-white" />
+                  <div className="border-b border-white" />
+                  <div className="border-r border-b border-white" />
+                  <div className="border-r border-b border-white" />
+                  <div className="border-b border-white" />
+                  <div className="border-r border-white" />
+                  <div className="border-r border-white" />
+                  <div />
+                </div>
+
+                {/* Glowing framing corners */}
+                <div className="flex justify-between">
+                  <div className="w-7 h-7 border-t-3 border-l-3 border-white rounded-tl-lg shadow-sm" />
+                  <div className="w-7 h-7 border-t-3 border-r-3 border-white rounded-tr-lg shadow-sm" />
+                </div>
+
+                {/* Center hint pill */}
+                <div className="text-center self-center">
+                  <span className="inline-flex items-center gap-1.5 bg-black/55 backdrop-blur-md text-white/95 text-xs font-medium px-4 py-1.5 rounded-full border border-white/20 shadow-md">
+                    <Shirt className="w-3.5 h-3.5 text-secondary" />
+                    <span>Center garment inside frame</span>
+                  </span>
+                </div>
+
+                <div className="flex justify-between">
+                  <div className="w-7 h-7 border-b-3 border-l-3 border-white rounded-bl-lg shadow-sm" />
+                  <div className="w-7 h-7 border-b-3 border-r-3 border-white rounded-br-lg shadow-sm" />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Bottom Control Bar */}
+          <div className="relative z-20 flex flex-col items-center pb-safe pb-8 px-6 gap-3.5">
+            <p className="text-white/80 text-xs font-medium tracking-wide drop-shadow text-center">
+              Lay flat or hang on plain background • Tap shutter to snap
+            </p>
+
+            <div className="w-full max-w-sm flex items-center justify-around pt-1">
+              {/* Left: Gallery Fallback Option */}
+              <button
+                type="button"
+                onClick={() => {
+                  stopCamera();
+                  fileInputRef.current?.click();
+                }}
+                title="Pick photo from files instead"
+                className="flex flex-col items-center gap-1 text-white/80 hover:text-white transition-colors cursor-pointer group"
+              >
+                <div className="w-12 h-12 rounded-full bg-white/15 group-hover:bg-white/25 backdrop-blur-md flex items-center justify-center border border-white/20 transition-transform group-active:scale-95">
+                  <FolderOpen className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-[11px] font-medium tracking-wide">
+                  Files
+                </span>
+              </button>
+
+              {/* Center: Hero Shutter Button */}
+              <button
+                type="button"
+                onClick={capturePhoto}
+                title="Capture photo (Space)"
+                className="group relative w-20 h-20 sm:w-22 sm:h-22 rounded-full border-4 border-white/95 bg-white/20 hover:bg-white/30 active:scale-95 transition-all flex items-center justify-center shadow-2xl cursor-pointer"
+              >
+                <span className="w-15 h-15 sm:w-16 sm:h-16 rounded-full bg-white transition-transform group-hover:scale-95 group-active:scale-90 shadow-md" />
+              </button>
+
+              {/* Right: Phone Native Camera Option */}
+              <button
+                type="button"
+                onClick={() => {
+                  stopCamera();
+                  nativeCameraInputRef.current?.click();
+                }}
+                title="Use device's native camera app"
+                className="flex flex-col items-center gap-1 text-white/80 hover:text-white transition-colors cursor-pointer group"
+              >
+                <div className="w-12 h-12 rounded-full bg-white/15 group-hover:bg-white/25 backdrop-blur-md flex items-center justify-center border border-white/20 transition-transform group-active:scale-95">
+                  <Camera className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-[11px] font-medium tracking-wide">
+                  Phone app
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-5xl mx-auto px-margin-mobile md:px-margin py-space-md">
         <div className="flex flex-col w-full">
           {/* Back Navigation */}
@@ -495,225 +778,155 @@ export default function AddClothingPage() {
             <div className="lg:col-span-6 flex flex-col gap-space-md">
               <div className="relative bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden p-space-md border border-outline-variant/20">
                 {!previewUrl ? (
-                  isCameraOpen ? (
-                    /* Live In-App Camera Viewfinder */
-                    <div className="relative w-full aspect-4/5 sm:aspect-1/1 md:aspect-4/5 bg-black rounded-xl overflow-hidden flex flex-col justify-between shadow-md border border-outline-variant/30">
-                      {/* Video stream element */}
-                      <video
-                        ref={videoRef}
-                        playsInline
-                        autoPlay
-                        muted
-                        className={`w-full h-full object-cover ${
-                          facingMode === "user" ? "scale-x-[-1]" : ""
-                        }`}
-                      />
-
-                      {/* Viewfinder Top Bar */}
-                      <div className="absolute top-0 inset-x-0 p-4 bg-linear-to-b from-black/75 to-transparent flex items-center justify-between z-10 text-white">
-                        <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full text-xs font-medium border border-white/10">
-                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                          <span>Live Camera Studio</span>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={toggleCameraFacing}
-                            title="Flip camera"
-                            className="w-9 h-9 rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-md flex items-center justify-center transition-colors cursor-pointer border border-white/10"
-                          >
-                            <SwitchCamera className="w-4 h-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={stopCamera}
-                            title="Close camera"
-                            className="w-9 h-9 rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-md flex items-center justify-center transition-colors cursor-pointer border border-white/10"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
+                  /* Dual Choice Hub: Camera Snap vs File Upload */
+                  <div
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    className={`min-h-95 sm:min-h-110 flex flex-col justify-between rounded-xl border-2 border-dashed p-6 transition-all ${
+                      isDragging
+                        ? "border-primary bg-primary/5 scale-[0.99]"
+                        : "border-outline-variant/60 bg-surface-container-low/40"
+                    }`}
+                  >
+                    {/* Top Header */}
+                    <div className="text-center pt-2">
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container-high text-primary text-xs font-semibold uppercase tracking-wider mb-2">
+                        <Camera className="w-3.5 h-3.5 text-secondary" />
+                        <span>Garment Input</span>
                       </div>
+                      <h3 className="font-headline-sm text-headline-sm text-primary font-medium">
+                        Add a clothing photo
+                      </h3>
+                      <p className="mt-1 max-w-sm mx-auto font-body-sm text-body-sm text-on-surface-variant">
+                        Snap a photo directly with your camera, or choose an
+                        existing photo from your device.
+                      </p>
+                    </div>
 
-                      {/* Viewfinder Reticle / Framing Guides */}
-                      <div className="absolute inset-8 pointer-events-none flex flex-col justify-between z-10">
-                        <div className="flex justify-between">
-                          <div className="w-6 h-6 border-t-2 border-l-2 border-white/70 rounded-tl-sm" />
-                          <div className="w-6 h-6 border-t-2 border-r-2 border-white/70 rounded-tr-sm" />
+                    {/* Camera error message if permission failed */}
+                    {cameraError && (
+                      <div className="my-2 p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-start gap-2 animate-in fade-in">
+                        <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <p className="font-medium">{cameraError}</p>
+                          <p className="mt-0.5 text-red-600">
+                            You can select a photo from your files below
+                            instead.
+                          </p>
                         </div>
-                        <div className="text-center">
-                          <span className="bg-black/50 text-white/90 text-xs px-3.5 py-1.5 rounded-full backdrop-blur-md border border-white/10 shadow-sm">
-                            Frame your garment in the center
-                          </span>
-                        </div>
-                        <div className="flex justify-between">
-                          <div className="w-6 h-6 border-b-2 border-l-2 border-white/70 rounded-bl-sm" />
-                          <div className="w-6 h-6 border-b-2 border-r-2 border-white/70 rounded-br-sm" />
-                        </div>
-                      </div>
-
-                      {/* Viewfinder Bottom Shutter Controls */}
-                      <div className="absolute bottom-0 inset-x-0 p-6 bg-linear-to-t from-black/85 via-black/40 to-transparent flex flex-col items-center gap-2 z-10">
                         <button
                           type="button"
-                          onClick={capturePhoto}
-                          title="Snap Photo"
-                          className="group relative w-18 h-18 rounded-full border-4 border-white/90 bg-white/20 hover:bg-white/40 active:scale-95 transition-all flex items-center justify-center shadow-xl cursor-pointer"
+                          onClick={() => setCameraError(null)}
+                          className="text-red-500 hover:text-red-700 cursor-pointer"
                         >
-                          <span className="w-13 h-13 rounded-full bg-white transition-transform group-hover:scale-95 group-active:scale-90" />
+                          <X className="w-3.5 h-3.5" />
                         </button>
-                        <span className="text-white/80 text-xs font-medium tracking-wide">
-                          Tap to snap photo
-                        </span>
                       </div>
-                    </div>
-                  ) : (
-                    /* Dual Choice Hub: Camera Snap vs File Upload */
-                    <div
-                      onDragOver={handleDragOver}
-                      onDragLeave={handleDragLeave}
-                      onDrop={handleDrop}
-                      className={`min-h-95 sm:min-h-110 flex flex-col justify-between rounded-xl border-2 border-dashed p-6 transition-all ${
-                        isDragging
-                          ? "border-primary bg-primary/5 scale-[0.99]"
-                          : "border-outline-variant/60 bg-surface-container-low/40"
-                      }`}
-                    >
-                      {/* Top Header */}
-                      <div className="text-center pt-2">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container-high text-primary text-xs font-semibold uppercase tracking-wider mb-2">
-                          <Camera className="w-3.5 h-3.5 text-secondary" />
-                          <span>Garment Input</span>
-                        </div>
-                        <h3 className="font-headline-sm text-headline-sm text-primary font-medium">
-                          Add a clothing photo
-                        </h3>
-                        <p className="mt-1 max-w-sm mx-auto font-body-sm text-body-sm text-on-surface-variant">
-                          Snap a photo directly with your camera, or choose an existing photo from your device.
-                        </p>
-                      </div>
+                    )}
 
-                      {/* Camera error message if permission failed */}
-                      {cameraError && (
-                        <div className="my-2 p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-start gap-2 animate-in fade-in">
-                          <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-                          <div className="flex-1">
-                            <p className="font-medium">{cameraError}</p>
-                            <p className="mt-0.5 text-red-600">
-                              You can select a photo from your files below instead.
+                    {/* Dual Action Options Grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 my-4">
+                      {/* OPTION 1: Snap Photo with Camera */}
+                      <div className="flex flex-col justify-between p-4 rounded-xl bg-surface-container-lowest border border-outline-variant/25 shadow-xs hover:border-primary/50 hover:shadow-sm transition-all group">
+                        <div className="space-y-2">
+                          <div className="w-11 h-11 rounded-lg bg-primary/10 text-primary flex items-center justify-center transition-transform group-hover:scale-105">
+                            <Camera className="w-5 h-5 text-primary" />
+                          </div>
+                          <div>
+                            <h4 className="font-title-md text-title-md text-on-surface font-semibold">
+                              Snap with camera
+                            </h4>
+                            <p className="font-body-sm text-body-sm text-on-surface-variant text-xs mt-0.5">
+                              Open full-screen camera viewfinder with framing
+                              guides.
                             </p>
                           </div>
+                        </div>
+
+                        <div className="pt-4 flex flex-col gap-1.5">
                           <button
                             type="button"
-                            onClick={() => setCameraError(null)}
-                            className="text-red-500 hover:text-red-700 cursor-pointer"
+                            onClick={() => startCamera()}
+                            disabled={cameraStarting}
+                            className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-title-md text-sm text-on-primary hover:bg-primary-container transition-all shadow-xs cursor-pointer disabled:opacity-75"
                           >
-                            <X className="w-3.5 h-3.5" />
+                            {cameraStarting ? (
+                              <>
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <span>Starting camera...</span>
+                              </>
+                            ) : (
+                              <>
+                                <Camera className="w-4 h-4" />
+                                <span>Open camera</span>
+                              </>
+                            )}
                           </button>
-                        </div>
-                      )}
 
-                      {/* Dual Action Options Grid */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 my-4">
-                        {/* OPTION 1: Snap Photo with Camera */}
-                        <div className="flex flex-col justify-between p-4 rounded-xl bg-surface-container-lowest border border-outline-variant/25 shadow-xs hover:border-primary/50 hover:shadow-sm transition-all group">
-                          <div className="space-y-2">
-                            <div className="w-11 h-11 rounded-lg bg-primary/10 text-primary flex items-center justify-center transition-transform group-hover:scale-105">
-                              <Camera className="w-5 h-5 text-primary" />
-                            </div>
-                            <div>
-                              <h4 className="font-title-md text-title-md text-on-surface font-semibold">
-                                Snap with camera
-                              </h4>
-                              <p className="font-body-sm text-body-sm text-on-surface-variant text-xs mt-0.5">
-                                Open the camera viewfinder directly inside the app to capture your garment.
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="pt-4 flex flex-col gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => startCamera()}
-                              disabled={cameraStarting}
-                              className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 font-title-md text-sm text-on-primary hover:bg-primary-container transition-all shadow-xs cursor-pointer disabled:opacity-75"
-                            >
-                              {cameraStarting ? (
-                                <>
-                                  <Loader2 className="w-4 h-4 animate-spin" />
-                                  <span>Starting camera...</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Camera className="w-4 h-4" />
-                                  <span>Snap photo</span>
-                                </>
-                              )}
-                            </button>
-
-                            {/* Native mobile camera fallback trigger */}
-                            <label className="text-center text-xs text-secondary hover:underline cursor-pointer py-1 font-medium">
-                              <span>Or use device camera app</span>
-                              <input
-                                ref={nativeCameraInputRef}
-                                type="file"
-                                accept="image/*"
-                                capture="environment"
-                                onChange={handleFileChange}
-                                className="hidden"
-                              />
-                            </label>
-                          </div>
-                        </div>
-
-                        {/* OPTION 2: Choose from Files */}
-                        <div className="flex flex-col justify-between p-4 rounded-xl bg-surface-container-lowest border border-outline-variant/25 shadow-xs hover:border-primary/50 hover:shadow-sm transition-all group">
-                          <div className="space-y-2">
-                            <div className="w-11 h-11 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center transition-transform group-hover:scale-105">
-                              <FolderOpen className="w-5 h-5 text-secondary" />
-                            </div>
-                            <div>
-                              <h4 className="font-title-md text-title-md text-on-surface font-semibold">
-                                Choose from files
-                              </h4>
-                              <p className="font-body-sm text-body-sm text-on-surface-variant text-xs mt-0.5">
-                                Select an image from your device storage, photo gallery, or folders.
-                              </p>
-                            </div>
-                          </div>
-
-                          <div className="pt-4 flex flex-col gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => fileInputRef.current?.click()}
-                              className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-surface-container-high px-4 py-2.5 font-title-md text-sm text-on-surface hover:bg-surface-container-highest transition-all shadow-xs cursor-pointer border border-outline-variant/30"
-                            >
-                              <UploadCloud className="w-4 h-4 text-primary" />
-                              <span>Select from file</span>
-                            </button>
-                            <span className="text-center text-xs text-on-surface-variant py-1">
-                              Supports JPG, PNG, WEBP
-                            </span>
+                          {/* Native mobile camera fallback trigger */}
+                          <label className="text-center text-xs text-secondary hover:underline cursor-pointer py-1 font-medium">
+                            <span>Or use device camera app</span>
                             <input
-                              ref={fileInputRef}
+                              ref={nativeCameraInputRef}
                               type="file"
-                              accept="image/jpeg,image/png,image/webp"
+                              accept="image/*"
+                              capture="environment"
                               onChange={handleFileChange}
                               className="hidden"
                             />
-                          </div>
+                          </label>
                         </div>
                       </div>
 
-                      {/* Bottom Drop Prompt */}
-                      <div className="text-center pt-2 border-t border-outline-variant/20">
-                        <p className="font-label-caps text-label-caps text-outline uppercase tracking-wider text-[11px]">
-                          Or drag & drop an image here · Plain background recommended
-                        </p>
+                      {/* OPTION 2: Choose from Files */}
+                      <div className="flex flex-col justify-between p-4 rounded-xl bg-surface-container-lowest border border-outline-variant/25 shadow-xs hover:border-primary/50 hover:shadow-sm transition-all group">
+                        <div className="space-y-2">
+                          <div className="w-11 h-11 rounded-lg bg-secondary/10 text-secondary flex items-center justify-center transition-transform group-hover:scale-105">
+                            <FolderOpen className="w-5 h-5 text-secondary" />
+                          </div>
+                          <div>
+                            <h4 className="font-title-md text-title-md text-on-surface font-semibold">
+                              Choose from files
+                            </h4>
+                            <p className="font-body-sm text-body-sm text-on-surface-variant text-xs mt-0.5">
+                              Select an image from your device storage, photo
+                              gallery, or folders.
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="pt-4 flex flex-col gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-surface-container-high px-4 py-2.5 font-title-md text-sm text-on-surface hover:bg-surface-container-highest transition-all shadow-xs cursor-pointer border border-outline-variant/30"
+                          >
+                            <UploadCloud className="w-4 h-4 text-primary" />
+                            <span>Select from file</span>
+                          </button>
+                          <span className="text-center text-xs text-on-surface-variant py-1">
+                            Supports JPG, PNG, WEBP
+                          </span>
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            onChange={handleFileChange}
+                            className="hidden"
+                          />
+                        </div>
                       </div>
                     </div>
-                  )
+
+                    {/* Bottom Drop Prompt */}
+                    <div className="text-center pt-2 border-t border-outline-variant/20">
+                      <p className="font-label-caps text-label-caps text-outline uppercase tracking-wider text-[11px]">
+                        Or drag & drop an image here · Plain background
+                        recommended
+                      </p>
+                    </div>
+                  </div>
                 ) : (
                   /* Active Image Canvas */
                   <>
