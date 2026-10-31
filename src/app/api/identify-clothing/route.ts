@@ -24,9 +24,35 @@ export async function POST(request: Request) {
       );
     }
 
-    const clothing = await identifyClothing(imageUrl);
+    const result = await identifyClothing(imageUrl);
 
-    return Response.json({ success: true, clothing });
+    // If Gemini determined the image is not a wearable clothing item or accessory
+    if (!result.isClothing) {
+      return Response.json({
+        success: false,
+        isClothing: false,
+        detectedObject: result.detectedObject || "non-clothing item",
+        rejectionReason:
+          result.rejectionReason ||
+          `We spotted a ${result.detectedObject || "non-clothing item"} instead of a wearable garment or fashion accessory.`,
+        message:
+          result.rejectionReason ||
+          `No clothing detected (spotted: ${result.detectedObject || "non-clothing item"}).`,
+      });
+    }
+
+    return Response.json({
+      success: true,
+      isClothing: true,
+      clothing: {
+        name: result.name || result.detectedObject || "Clothing Item",
+        category: (result.category || "tops").toLowerCase(),
+        subcategory: result.subcategory || "",
+        color: result.color || "",
+        style: result.style || "Casual / Smart casual",
+      },
+      detectedObject: result.detectedObject,
+    });
   } catch (error) {
     console.error("Clothing identification error:", error);
 

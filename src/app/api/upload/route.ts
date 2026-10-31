@@ -86,3 +86,35 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export async function DELETE(request: Request) {
+  try {
+    const session = await auth();
+    const userId = session?.user?.id;
+
+    if (!userId) {
+      return Response.json(
+        { success: false, message: "Please sign in." },
+        { status: 401 }
+      );
+    }
+
+    const { publicId } = await request.json();
+
+    if (publicId && typeof publicId === "string") {
+      await cloudinary.uploader.destroy(publicId);
+      return Response.json({ success: true, message: "Image removed from storage." });
+    }
+
+    return Response.json(
+      { success: false, message: "Missing publicId" },
+      { status: 400 }
+    );
+  } catch (error) {
+    console.error("Cloudinary delete error:", error);
+    return Response.json(
+      { success: false, message: "Failed to delete image" },
+      { status: 500 }
+    );
+  }
+}

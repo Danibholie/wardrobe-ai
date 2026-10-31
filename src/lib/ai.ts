@@ -20,9 +20,25 @@ const CANDIDATE_MODELS = [
 const clothingSchema = {
   type: Type.OBJECT,
   properties: {
+    isClothing: {
+      type: Type.BOOLEAN,
+      description:
+        "True ONLY if the primary subject in the image is a wearable garment (shirt, pants, dress, jacket, agbada, etc.), footwear (shoes, boots, sandals, heels), or wearable fashion accessory (hat, cap, bag, belt, sunglasses, scarf, jewelry, watch). False if the image depicts furniture, household items, animals/pets, food, electronics, vehicles, documents, nature, or other non-wearable objects.",
+    },
+    detectedObject: {
+      type: Type.STRING,
+      description:
+        "Concise 2-4 word description of what is actually shown in the image (e.g. 'wooden coffee table', 'domestic cat', 'smartphone', 'cotton t-shirt', 'leather sneakers').",
+    },
+    rejectionReason: {
+      type: Type.STRING,
+      description:
+        "If isClothing is false, a friendly explanation of why this was not recognized as clothing (e.g., 'This image appears to show furniture rather than clothing or accessories.'). Empty string if isClothing is true.",
+    },
     name: {
       type: Type.STRING,
-      description: "A short, descriptive clothing item name.",
+      description:
+        "A short, descriptive clothing item name if isClothing is true (e.g. 'Oversized Linen Shirt'). Empty string if not clothing.",
     },
     category: {
       type: Type.STRING,
@@ -34,13 +50,15 @@ const clothingSchema = {
         "shoes",
         "accessories",
         "traditional",
+        "other",
       ],
       description:
-        "One of: tops, bottoms, dresses, outerwear, shoes, accessories, traditional.",
+        "One of: tops, bottoms, dresses, outerwear, shoes, accessories, traditional, other.",
     },
     subcategory: {
       type: Type.STRING,
-      description: "Specific item type, such as polo, jeans, or sneakers.",
+      description:
+        "Specific item type, such as polo, jeans, or sneakers. Empty string if not clothing.",
     },
     color: {
       type: Type.STRING,
@@ -52,7 +70,16 @@ const clothingSchema = {
         "A simple style description, such as casual, formal, or traditional.",
     },
   },
-  required: ["name", "category", "subcategory", "color", "style"],
+  required: [
+    "isClothing",
+    "detectedObject",
+    "rejectionReason",
+    "name",
+    "category",
+    "subcategory",
+    "color",
+    "style",
+  ],
 };
 
 export async function identifyClothing(imageUrl: string) {
@@ -82,40 +109,50 @@ export async function identifyClothing(imageUrl: string) {
             role: "user",
             parts: [
               {
-                text: `Identify the main clothing item in this image.
+                text: `You are an expert fashion stylist and digital wardrobe cataloguer.
 
-Return its visible attributes only. Do not invent a brand, fabric,
-material, or other details that cannot be determined visually.
+TASK:
+Analyze this image with high precision:
 
-Use one category from:
-tops, bottoms, dresses, outerwear, shoes, accessories, traditional.
+STEP 1: CLOTHING / FASHION VERIFICATION
+Determine if the primary subject in this image is a genuine piece of clothing, footwear, headwear, or wearable fashion accessory.
 
-Recognise Nigerian clothing where applicable, including agbada,
-senator wear, kaftan, Ankara and Aso-Ebi.
+- VALID CLOTHING & ACCESSORIES INCLUDE:
+  - Tops (t-shirts, shirts, blouses, knitwear, sweaters, tank tops, vests)
+  - Bottoms (trousers, jeans, shorts, skirts, sweatpants, chinos)
+  - Dresses (day dresses, evening gowns, maxi dresses, sundresses)
+  - Outerwear (jackets, blazers, coats, hoodies, cardigans, trench coats)
+  - Shoes (sneakers, loafers, boots, heels, sandals, dress shoes, slides)
+  - Accessories (handbags, backpacks, belts, hats, caps, watches, sunglasses, scarves, ties, jewelry)
+  - Traditional / Cultural (Nigerian attire: Agbada, Senator wear, Kaftan, Ankara, Aso-Ebi, Iro & Buba, Dashiki)
 
-If the image does not clearly show a clothing item, do not guess.
-Provide the best concise description supported by the image.
+- INVALID NON-CLOTHING OBJECTS INCLUDE:
+  - Furniture (tables, chairs, desks, couches, beds, lamps)
+  - Animals / Pets (dogs, cats, birds)
+  - Electronics (smartphones, laptops, TVs, monitors)
+  - Food & Drinks
+  - Vehicles, architecture, landscapes, plants, documents, packaging, or random everyday household items.
 
-Return only valid JSON with these fields:
+STEP 2: OUTPUT RULES
+- IF NOT CLOTHING:
+  - Set "isClothing": false
+  - Set "detectedObject": a concise name for what is shown (e.g., "wooden table", "domestic cat", "plate of food", "laptop")
+  - Set "rejectionReason": a polite 1-sentence explanation why this cannot be catalogued in a clothing wardrobe.
+  - Set "category": "other"
+  - Set "name": ""
+  - Set "subcategory": ""
+  - Set "color": visible dominant color (or empty string)
+  - Set "style": "other"
 
-{
-"name": "string",
-"category": "string",
-"subcategory": "string",
-"color": "string",
-"style": "string"
-}
+- IF IT IS CLOTHING OR A WEARABLE ACCESSORY:
+  - Set "isClothing": true
+  - Set "detectedObject": the garment name
+  - Set "rejectionReason": ""
+  - Populate "name", "category", "subcategory", "color", "style" accurately based only on what is visibly present.
+  - Category must be one of: tops, bottoms, dresses, outerwear, shoes, accessories, traditional.
+  - Do not invent brands, fabrics, or materials that cannot be confirmed visually.
 
-Rules:
-- Identify only what is visibly present.
-- Do not invent details that cannot reasonably be determined.
-- Use simple clothing terminology.
-- Category should normally be one of:
-tops, bottoms, dresses, outerwear, shoes, accessories, traditional
-- For Nigerian traditional clothing, examples include:
-agbada, senator, kaftan, ankara, aso-ebi.
-- Keep the values concise.
-`,
+Return valid JSON adhering strictly to the schema.`,
               },
               {
                 inlineData: {
