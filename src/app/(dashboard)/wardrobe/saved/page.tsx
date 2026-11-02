@@ -237,78 +237,61 @@ export default function SavedOutfitsPage() {
   }
 
   async function handleLogWear(outfit: SavedOutfit) {
-    // 1. Optimistic wear increment
+    const previousWearCount = outfit.wearCount || 0;
+    const previousLastWorn = outfit.lastWorn;
+    const newCount = previousWearCount + 1;
+    const nowIso = new Date().toISOString();
+
+    // 1. Optimistic wear increment & date update
     setOutfits((prev) =>
       prev.map((o) =>
-        o.id === outfit.id ? { ...o, wearCount: (o.wearCount || 0) + 1 } : o,
+        o.id === outfit.id
+          ? { ...o, wearCount: newCount, lastWorn: nowIso }
+          : o,
       ),
     );
 
-    //   // 2. Prepend timeline entry
-    //   const newEntry: TimelineItem = {
-    //     id: `wear-${Date.now()}`,
-    //     title: outfit.title,
-    //     timestamp: "Today • Lagos",
-    //     description: `${outfit.location || "Lagos"} • Logged via instant wear dock`,
-    //     badge: { text: "Just logged", icon: CheckCircle2 },
-    //     dotColor: "bg-secondary",
-    //   };
-    //   setTimelineEntries((prev) => [newEntry, ...prev]);
+    showToast(`Logged "${outfit.title}" for today! (Worn ${newCount} ${newCount === 1 ? "time" : "times"})`);
 
-    //   showToast(`Selected "${outfit.title}" for today! Added to rotation.`);
+    // 2. Persist wear count and lastWorn to MongoDB
+    try {
+      const res = await fetch(`/api/outfits/${outfit.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ increment: 1 }),
+      });
 
-    //   // 3. Persist wear count to MongoDB
-    //   try {
-    //     await fetch(`/api/outfits/${outfit.id}`, {
-    //       method: "PATCH",
-    //       headers: { "Content-Type": "application/json" },
-    //       body: JSON.stringify({ increment: 1 }),
-    //     });
-    //   } catch (err) {
-    //     console.error("Wear log persist error:", err);
-    //   }
-    // }
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to persist wear update");
+      }
 
-    // async function handleQuickCheckinSubmit() {
-    //   if (!modalOutfitId) return;
-    //   const outfit = outfits.find((o) => o.id === modalOutfitId);
-    //   if (!outfit) return;
-
-    //   const notes = modalNotes.trim() || "Daily rotation check-in";
-
-    //   // 1. Optimistic wear increment
-    //   setOutfits((prev) =>
-    //     prev.map((o) =>
-    //       o.id === outfit.id ? { ...o, wearCount: (o.wearCount || 0) + 1 } : o,
-    //     ),
-    //   );
-
-    //   // 2. Add to timeline
-    //   const newEntry: TimelineItem = {
-    //     id: `checkin-${Date.now()}`,
-    //     title: outfit.title,
-    //     timestamp: "Today • Lagos",
-    //     description: notes,
-    //     badge: { text: "Just logged", icon: CheckCircle2 },
-    //     dotColor: "bg-secondary",
-    //   };
-    //   setTimelineEntries((prev) => [newEntry, ...prev]);
-
-    //   setCheckinModalOpen(false);
-    //   setModalNotes("");
-    //   showToast(`Logged "${outfit.title}" to your timeline!`);
-
-    //   // 3. Persist wear to MongoDB
-    //   try {
-    //     await fetch(`/api/outfits/${outfit.id}`, {
-    //       method: "PATCH",
-    //       headers: { "Content-Type": "application/json" },
-    //       body: JSON.stringify({ increment: 1 }),
-    //     });
-    //   } catch (err) {
-    //     console.error("Check-in persist error:", err);
-    //   }
-    // }
+      if (typeof data.wearCount === "number") {
+        setOutfits((prev) =>
+          prev.map((o) =>
+            o.id === outfit.id
+              ? {
+                  ...o,
+                  wearCount: data.wearCount,
+                  lastWorn: data.lastWorn || nowIso,
+                }
+              : o,
+          ),
+        );
+      }
+    } catch (err) {
+      console.error("Wear log persist error:", err);
+      // Revert optimistic update on failure
+      setOutfits((prev) =>
+        prev.map((o) =>
+          o.id === outfit.id
+            ? { ...o, wearCount: previousWearCount, lastWorn: previousLastWorn }
+            : o,
+        ),
+      );
+      showToast(`Could not update wear count for "${outfit.title}".`);
+    }
+  }
 
     // Filtered lists and metrics counts
     const categoryCounts = useMemo(() => {
@@ -595,7 +578,7 @@ export default function SavedOutfitsPage() {
                         </p>
 
                         {/* Metadata */}
-                        <div className="flex items-center gap-space-sm text-on-surface-variant font-label-caps text-label-caps uppercase">
+                        <div className="flex items-center flex-wrap gap-space-sm text-on-surface-variant font-label-caps text-label-caps uppercase">
                           <span className="flex items-center gap-1">
                             <Calendar className="w-3.5 h-3.5" />
                             <span>Saved {formatDate(outfit.createdAt)}</span>
@@ -610,8 +593,14 @@ export default function SavedOutfitsPage() {
                           >
                             {wearCount > 0
                               ? `Worn ${wearCount} ${wearCount === 1 ? "time" : "times"}`
-                              : "Unworn this month"}
+                              : "Unworn"}
                           </span>
+                          {outfit.lastWorn && (
+                            <>
+                              <span>•</span>
+                              <span>Last worn {formatDate(outfit.lastWorn)}</span>
+                            </>
+                          )}
                         </div>
                       </div>
 
@@ -821,5 +810,4 @@ export default function SavedOutfitsPage() {
         )}
       </main>
     );
-  }
 }
