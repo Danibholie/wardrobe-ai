@@ -87,13 +87,13 @@ const comparisonTable: ComparisonRow[] = [
   },
   {
     feature: "Wardrobe Item Limit",
-    starter: "Up to 15 – 20 items (enough for basic mixing & matching)",
-    pro: "Unlimited items (generous cap like 300 to prevent bot abuse)",
+    starter: "Up to 15 – 20 items",
+    pro: "Unlimited items",
   },
   {
     feature: "AI Outfit Recommendations",
-    starter: "3 generations per week (or 1 daily)",
-    pro: "Unlimited generations (e.g. up to 30/day)",
+    starter: "3 Outfit Generations per week",
+    pro: "Unlimited Outfit Generations",
   },
   {
     feature: "Occasion Support",
@@ -1107,7 +1107,7 @@ export default function LandingPage() {
                     <li className="flex items-start gap-2.5">
                       <span className="text-forest font-bold mt-0.5">✓</span>
                       <span>
-                        <strong>3 generations per week</strong> (or 1 daily)
+                        <strong>3 generations per week</strong>
                       </span>
                     </li>
                     <li className="flex items-start gap-2.5">
@@ -1178,15 +1178,13 @@ export default function LandingPage() {
                     <li className="flex items-start gap-2.5">
                       <span className="text-forest font-bold mt-0.5">✓</span>
                       <span>
-                        <strong>Unlimited items</strong> (cap like 300 to
-                        prevent bot abuse)
+                        <strong>Unlimited items</strong>
                       </span>
                     </li>
                     <li className="flex items-start gap-2.5">
                       <span className="text-forest font-bold mt-0.5">✓</span>
                       <span>
-                        <strong>Unlimited generations</strong> (e.g. up to
-                        30/day)
+                        <strong>Unlimited generations</strong>
                       </span>
                     </li>
                     <li className="flex items-start gap-2.5">
@@ -1530,11 +1528,6 @@ export default function LandingPage() {
                     href="https://lbd-digital-hub-new.vercel.app/about"
                   >
                     About LBD Digital Hub
-                  </a>
-                </li>
-                <li>
-                  <a className="hover:text-white transition-colors" href="#">
-                    Careers
                   </a>
                 </li>
                 <li>
