@@ -4,11 +4,17 @@ import { connectDB } from "@/lib/db";
 import WardrobeItem from "@/models/WardrobeItem";
 import { recommendOutfits, WardrobeItemSummary } from "@/lib/ai";
 import { parseAiError } from "@/lib/errors";
+import { trackMetric } from "@/lib/telemetry";
 
 export async function POST(request: Request) {
+  const reqStartTime = performance.now();
+  let aiStartTime = 0;
+  let currentUserId: string | undefined;
+
   try {
     const session = await auth();
     const userId = session?.user?.id;
+    currentUserId = userId;
 
     if (!userId) {
       return NextResponse.json(
@@ -130,6 +136,7 @@ export async function POST(request: Request) {
       }
     }
 
+    aiStartTime = performance.now();
     const recommendation = await recommendOutfits({
       items: wardrobeSummaries,
       location,
@@ -138,6 +145,7 @@ export async function POST(request: Request) {
       stylePreference,
       vibe: contextualVibeParts.join(". "),
     });
+    const aiDurationMs = performance.now() - aiStartTime;
 
     // CRITICAL SERVER-SIDE ENFORCEMENT:
     // Only items authentically belonging to the user's database can be returned.
@@ -158,6 +166,22 @@ export async function POST(request: Request) {
       })
       .filter((outfit) => outfit.items.length > 0);
 
+    // Record non-blocking telemetry
+    void trackMetric({
+      type: "ai_recommendation",
+      endpoint: "/api/recommend-outfits",
+      userId,
+      durationMs: aiDurationMs,
+      success: true,
+      statusCode: 200,
+      metadata: {
+        totalWardrobeCount: userItems.length,
+        outfitsReturned: enrichedOutfits.length,
+        hasAnchorItem: Boolean(anchorItemId),
+        occasion,
+      },
+    });
+
     return NextResponse.json({
       success: true,
       outfits: enrichedOutfits,
@@ -172,11 +196,25 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
+    const errorDuration = aiStartTime > 0 ? performance.now() - aiStartTime : performance.now() - reqStartTime;
     console.error("Outfit recommendation error:", error);
+
     const { friendlyMessage, statusCode } = parseAiError(
       error,
       "Failed to generate outfit recommendations.",
     );
+
+    // Record failure in telemetry
+    void trackMetric({
+      type: "ai_recommendation",
+      endpoint: "/api/recommend-outfits",
+      userId: currentUserId,
+      durationMs: errorDuration,
+      success: false,
+      statusCode,
+      errorCode: (error as Error)?.name || "RECOMMENDATION_FAILED",
+      errorMessage: (error as Error)?.message || friendlyMessage,
+    });
 
     return NextResponse.json(
       {

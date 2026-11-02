@@ -4,6 +4,8 @@ export interface IUser extends Document {
   name?: string;
   email: string;
   image?: string;
+  role?: "user" | "admin";
+  lastActiveAt?: Date;
   location?: {
     city?: string;
     country?: string;
@@ -35,6 +37,18 @@ const UserSchema = new Schema<IUser>(
 
     image: {
       type: String,
+    },
+
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
+    },
+
+    lastActiveAt: {
+      type: Date,
+      default: Date.now,
+      index: true,
     },
 
     location: {

@@ -1,11 +1,17 @@
 import { auth } from "@/auth";
 import { identifyClothing } from "@/lib/ai";
 import { parseAiError } from "@/lib/errors";
+import { trackMetric } from "@/lib/telemetry";
 
 export async function POST(request: Request) {
+  const reqStartTime = performance.now();
+  let aiStartTime = 0;
+  let currentUserId: string | undefined;
+
   try {
     const session = await auth();
     const userId = session?.user?.id;
+    currentUserId = userId;
 
     if (!userId) {
       return Response.json(
@@ -14,7 +20,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = await request.json();
+    const body = await request.json().catch(() => ({}));
     const { imageUrl } = body;
 
     if (!imageUrl || typeof imageUrl !== "string") {
@@ -24,7 +30,24 @@ export async function POST(request: Request) {
       );
     }
 
+    aiStartTime = performance.now();
     const result = await identifyClothing(imageUrl);
+    const durationMs = performance.now() - aiStartTime;
+
+    // Track AI Vision completion
+    void trackMetric({
+      type: "clothing_identification",
+      endpoint: "/api/identify-clothing",
+      userId,
+      durationMs,
+      success: true,
+      statusCode: 200,
+      metadata: {
+        isClothing: result.isClothing,
+        detectedObject: result.detectedObject,
+        category: result.category,
+      },
+    });
 
     // If Gemini determined the image is not a wearable clothing item or accessory
     if (!result.isClothing) {
@@ -54,12 +77,24 @@ export async function POST(request: Request) {
       detectedObject: result.detectedObject,
     });
   } catch (error) {
+    const durationMs = aiStartTime > 0 ? performance.now() - aiStartTime : performance.now() - reqStartTime;
     console.error("Clothing identification error:", error);
 
     const { friendlyMessage, statusCode } = parseAiError(
       error,
       "Failed to identify clothing from this image."
     );
+
+    void trackMetric({
+      type: "clothing_identification",
+      endpoint: "/api/identify-clothing",
+      userId: currentUserId,
+      durationMs,
+      success: false,
+      statusCode,
+      errorCode: (error as Error)?.name || "IDENTIFY_CLOTHING_ERROR",
+      errorMessage: (error as Error)?.message || friendlyMessage,
+    });
 
     return Response.json(
       {

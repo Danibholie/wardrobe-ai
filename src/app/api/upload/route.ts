@@ -1,5 +1,6 @@
 import { v2 as cloudinary } from "cloudinary";
 import { auth } from "@/auth";
+import { trackMetric } from "@/lib/telemetry";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -8,9 +9,14 @@ cloudinary.config({
 });
 
 export async function POST(request: Request) {
+  const reqStartTime = performance.now();
+  let uploadStartTime = 0;
+  let currentUserId: string | undefined;
+
   try {
     const session = await auth();
     const userId = session?.user?.id;
+    currentUserId = userId;
 
     if (!userId) {
       return Response.json(
@@ -39,6 +45,7 @@ export async function POST(request: Request) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
+    uploadStartTime = performance.now();
     const result = await new Promise<{
       secure_url: string;
       public_id: string;
@@ -69,13 +76,41 @@ export async function POST(request: Request) {
       uploadStream.end(buffer);
     });
 
+    const durationMs = performance.now() - uploadStartTime;
+
+    // Track successful upload
+    void trackMetric({
+      type: "image_upload",
+      endpoint: "/api/upload",
+      userId,
+      durationMs,
+      success: true,
+      statusCode: 200,
+      metadata: {
+        fileSizeBytes: buffer.length,
+        fileType: file.type,
+      },
+    });
+
     return Response.json({
       success: true,
       imageUrl: result.secure_url,
       publicId: result.public_id,
     });
   } catch (error) {
+    const durationMs = uploadStartTime > 0 ? performance.now() - uploadStartTime : performance.now() - reqStartTime;
     console.error("Cloudinary upload error:", error);
+
+    void trackMetric({
+      type: "image_upload",
+      endpoint: "/api/upload",
+      userId: currentUserId,
+      durationMs,
+      success: false,
+      statusCode: 500,
+      errorCode: (error as Error)?.name || "UPLOAD_FAILED",
+      errorMessage: (error as Error)?.message || "Failed to upload image",
+    });
 
     return Response.json(
       {

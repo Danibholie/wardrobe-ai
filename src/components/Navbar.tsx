@@ -14,6 +14,7 @@ import {
   MapPin,
   CloudSun,
   ChevronDown,
+  Activity,
 } from "lucide-react";
 import { SignOutButton } from "@/app/SignOutButton";
 import { useLocationWeather } from "@/hooks/useLocationWeather";
@@ -240,6 +241,14 @@ export function Navbar({ user }: NavbarProps) {
                           <Bookmark className="w-4 h-4 text-secondary shrink-0" />
                           <span>Saved Outfits</span>
                         </Link>
+                        <Link
+                          href="/admin"
+                          onClick={() => setDesktopMenuOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-body-sm text-on-surface hover:bg-surface-container transition-colors"
+                        >
+                          <Activity className="w-4 h-4 text-secondary shrink-0" />
+                          <span>System Health</span>
+                        </Link>
                       </div>
 
                       {/* Sign Out CTA */}
@@ -332,7 +341,15 @@ export function Navbar({ user }: NavbarProps) {
                   </div>
                 </div>
 
-                <div className="pt-1 flex items-center justify-end">
+                <div className="pt-1 flex items-center justify-between">
+                  <Link
+                    href="/admin"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-1.5 text-xs text-on-surface-variant hover:text-on-surface transition-colors"
+                  >
+                    <Activity className="w-3.5 h-3.5 text-secondary shrink-0" />
+                    <span>System Health</span>
+                  </Link>
                   <SignOutButton
                     variant="ghost"
                     onSignedOut={() => setMobileMenuOpen(false)}
