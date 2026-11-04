@@ -249,6 +249,24 @@ export function Navbar({ user }: NavbarProps) {
                           <Activity className="w-4 h-4 text-secondary shrink-0" />
                           <span>System Health</span>
                         </Link>
+
+                        <div className="flex items-center gap-3 px-3 pt-1 text-[11px] text-on-surface-variant/70">
+                          <Link
+                            href="/privacy"
+                            onClick={() => setDesktopMenuOpen(false)}
+                            className="hover:text-primary transition-colors"
+                          >
+                            Privacy Policy
+                          </Link>
+                          <span>·</span>
+                          <Link
+                            href="/terms"
+                            onClick={() => setDesktopMenuOpen(false)}
+                            className="hover:text-primary transition-colors"
+                          >
+                            Terms
+                          </Link>
+                        </div>
                       </div>
 
                       {/* Sign Out CTA */}
@@ -354,6 +372,24 @@ export function Navbar({ user }: NavbarProps) {
                     variant="ghost"
                     onSignedOut={() => setMobileMenuOpen(false)}
                   />
+                </div>
+
+                <div className="pt-2 border-t border-outline-variant/15 flex items-center gap-3 text-[11px] text-on-surface-variant/70">
+                  <Link
+                    href="/privacy"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="hover:text-primary transition-colors"
+                  >
+                    Privacy Policy
+                  </Link>
+                  <span>·</span>
+                  <Link
+                    href="/terms"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="hover:text-primary transition-colors"
+                  >
+                    Terms of Service
+                  </Link>
                 </div>
               </div>
             )}

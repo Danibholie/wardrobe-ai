@@ -101,6 +101,18 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
             <GoogleSignInButton />
           </form>
 
+          <p className="text-[11px] text-on-surface-variant/70 mt-3 text-center">
+            By signing in, you agree to our{" "}
+            <Link href="/terms" className="underline hover:text-primary transition-colors">
+              Terms of Service
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" className="underline hover:text-primary transition-colors">
+              Privacy Policy
+            </Link>
+            .
+          </p>
+
           {/* Features Highlights */}
           <div className="w-full mt-8 pt-6 border-t border-outline-variant/30 text-left space-y-2.5">
             <div className="flex items-center gap-2.5 text-body-sm text-on-surface-variant">

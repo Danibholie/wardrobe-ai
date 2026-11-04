@@ -174,6 +174,18 @@ export default function PrivacyPolicyPage() {
                 <strong>Open-Meteo Weather API:</strong> Fetches local temperatures, humidity, and rainfall radar without transmitting personal identifiers.
               </li>
             </ul>
+            <div className="p-4 rounded-xl bg-ivory-200/70 border border-ivory-300 text-xs sm:text-sm text-stone-700 mt-4">
+              <strong>Google API Limited Use Disclosure:</strong> Wardrobe AI&apos;s use and transfer to any other app of information received from Google APIs will adhere to the{" "}
+              <a
+                href="https://developers.google.com/terms/api-services-user-data-policy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-forest font-medium underline"
+              >
+                Google API Services User Data Policy
+              </a>
+              , including the Limited Use requirements.
+            </div>
           </section>
 
           {/* Section 5 */}
