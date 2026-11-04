@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="12" stdDeviation="10" flood-color="#1E293B" flood-opacity="0.12" />
+    </filter>
+    <linearGradient id="foldLight" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.15" />
+      <stop offset="50%" stop-color="#000000" stop-opacity="0.05" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.1" />
+    </linearGradient>
+  </defs>
+  
+    <g filter="url(#shadow)">
+      <path d="M125 90 L275 90 L260 350 L140 350 Z" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1" />
+      <path d="M125 90 L60 220 L95 230 L135 150 Z" fill="#F8FAFC" />
+      <path d="M275 90 L340 220 L305 230 L265 150 Z" fill="#F8FAFC" />
+      <!-- Pointed Collar -->
+      <polygon points="155,90 200,125 175,135 145,95" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1" />
+      <polygon points="245,90 200,125 225,135 255,95" fill="#F1F5F9" stroke="#CBD5E1" stroke-width="1" />
+      <!-- Placket and Mother of Pearl Buttons -->
+      <line x1="200" y1="125" x2="200" y2="350" stroke="#E2E8F0" stroke-width="12" />
+      <circle cx="200" cy="155" r="3" fill="#94A3B8" />
+      <circle cx="200" cy="195" r="3" fill="#94A3B8" />
+      <circle cx="200" cy="235" r="3" fill="#94A3B8" />
+      <circle cx="200" cy="275" r="3" fill="#94A3B8" />
+    </g>
+  
+</svg>

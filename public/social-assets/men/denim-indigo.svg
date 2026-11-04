@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="12" stdDeviation="10" flood-color="#1E293B" flood-opacity="0.12" />
+    </filter>
+    <linearGradient id="foldLight" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.15" />
+      <stop offset="50%" stop-color="#000000" stop-opacity="0.05" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.1" />
+    </linearGradient>
+  </defs>
+  
+    <g filter="url(#shadow)">
+      <rect x="130" y="50" width="140" height="24" rx="3" fill="#1E3A8A" />
+      <path d="M130 74 L115 360 L185 360 L195 140 L205 140 L215 360 L285 360 L270 74 Z" fill="#172554" />
+      <!-- Tobacco Contrast Stitching -->
+      <line x1="130" y1="74" x2="270" y2="74" stroke="#D97706" stroke-width="1.5" stroke-dasharray="3,2" />
+      <path d="M195 74 L195 140" stroke="#D97706" stroke-width="1.5" stroke-dasharray="3,2" />
+    </g>
+  
+</svg>

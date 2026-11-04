@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="12" stdDeviation="10" flood-color="#1E293B" flood-opacity="0.12" />
+    </filter>
+    <linearGradient id="foldLight" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.15" />
+      <stop offset="50%" stop-color="#000000" stop-opacity="0.05" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.1" />
+    </linearGradient>
+  </defs>
+  
+    <g filter="url(#shadow)">
+      <!-- Wrap Top -->
+      <path d="M130 70 L270 70 L240 220 L160 220 Z" fill="#B45309" />
+      <polygon points="130,70 200,160 170,180 110,80" fill="#1E3A8A" />
+      <polygon points="270,70 180,180 210,195 290,80" fill="#047857" />
+      <!-- Flare Midi Skirt Section -->
+      <path d="M160 220 L240 220 L310 365 L90 365 Z" fill="#B45309" />
+      <!-- Traditional Swirl / Floral Motifs -->
+      <circle cx="200" cy="280" r="28" fill="#F59E0B" />
+      <circle cx="200" cy="280" r="14" fill="#1E3A8A" />
+      <circle cx="140" cy="320" r="20" fill="#047857" />
+      <circle cx="260" cy="320" r="20" fill="#047857" />
+      <!-- Tie Belt -->
+      <rect x="150" y="212" width="100" height="12" rx="4" fill="#78350F" />
+    </g>
+  
+</svg>

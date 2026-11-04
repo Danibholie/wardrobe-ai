@@ -136,33 +136,27 @@ export function Navbar({ user }: NavbarProps) {
               <div className="flex items-center gap-2 sm:gap-3">
                 {/* Desktop User Info & Auto-Detected Location */}
                 <div className="hidden sm:flex flex-col text-right">
-                  <span className="font-label-md text-label-md text-on-surface font-semibold leading-tight line-clamp-1 max-w-[140px]">
+                  <span className="font-label-md text-label-md text-on-surface font-semibold leading-tight line-clamp-1 max-w-35">
                     {user.name || "Bolu"}
                   </span>
                   <div className="flex items-center justify-end gap-1 font-label-caps text-label-caps text-on-surface-variant tracking-wider">
                     <MapPin className="w-2.5 h-2.5 text-secondary shrink-0" />
-                    <span className="truncate max-w-[120px]">
+                    <span className="truncate max-w-30" suppressHydrationWarning>
                       {weatherLoading ? "Detecting..." : shortLocation}
                     </span>
                     {!weatherLoading && weatherShort && (
                       <>
                         <span className="text-outline-variant">·</span>
-                        <span className="text-primary font-medium truncate max-w-[90px]">
+                        <span
+                          className="text-primary font-medium truncate max-w-22.5"
+                          suppressHydrationWarning
+                        >
                           {weatherShort}
                         </span>
                       </>
                     )}
                   </div>
                 </div>
-
-                {/* Desktop Sign Out Button (Visible on md+ screens) */}
-                {/* <div className="hidden md:flex items-center">
-                  <SignOutButton
-                    variant="desktop"
-                    label="Sign out"
-                    className="text-xs"
-                  />
-                </div> */}
 
                 {/* Avatar with dropdown trigger (Desktop + Mobile) */}
                 <div className="relative" ref={desktopMenuRef}>
@@ -349,13 +343,13 @@ export function Navbar({ user }: NavbarProps) {
                 <div className="flex items-center justify-between text-xs text-on-surface-variant py-1">
                   <div className="flex items-center gap-1.5">
                     <MapPin className="w-3.5 h-3.5 text-secondary shrink-0" />
-                    <span className="font-medium text-on-surface">
+                    <span className="font-medium text-on-surface" suppressHydrationWarning>
                       {fullLocation}
                     </span>
                   </div>
                   <div className="flex items-center gap-1 text-primary font-medium">
                     <CloudSun className="w-3.5 h-3.5 text-secondary shrink-0" />
-                    <span>{weatherShort}</span>
+                    <span suppressHydrationWarning>{weatherShort}</span>
                   </div>
                 </div>
 

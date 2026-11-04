@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="12" stdDeviation="10" flood-color="#1E293B" flood-opacity="0.12" />
+    </filter>
+    <linearGradient id="foldLight" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.15" />
+      <stop offset="50%" stop-color="#000000" stop-opacity="0.05" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.1" />
+    </linearGradient>
+  </defs>
+  
+    <g filter="url(#shadow)">
+      <path d="M115 240 Q110 165 145 150 Q175 160 170 240 Q165 270 145 270 Q125 270 115 240 Z" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2" />
+      <path d="M130 175 L160 175" stroke="#CBD5E1" stroke-width="2" />
+      <path d="M130 190 L160 190" stroke="#CBD5E1" stroke-width="2" />
+      <!-- Right Sneaker -->
+      <path d="M225 240 Q220 165 255 150 Q285 160 280 240 Q275 270 255 270 Q235 270 225 240 Z" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2" />
+      <path d="M240 175 L270 175" stroke="#CBD5E1" stroke-width="2" />
+      <path d="M240 190 L270 190" stroke="#CBD5E1" stroke-width="2" />
+    </g>
+  
+</svg>

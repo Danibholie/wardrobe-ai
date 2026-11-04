@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <defs>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="12" stdDeviation="10" flood-color="#1E293B" flood-opacity="0.12" />
+    </filter>
+    <linearGradient id="foldLight" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.15" />
+      <stop offset="50%" stop-color="#000000" stop-opacity="0.05" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.1" />
+    </linearGradient>
+  </defs>
+  
+    <g filter="url(#shadow)">
+      <rect x="135" y="50" width="130" height="24" rx="4" fill="#E2DDD5" />
+      <path d="M135 74 L115 355 L185 355 L195 140 L205 140 L215 355 L285 355 L265 74 Z" fill="#EFECE6" />
+      <!-- Drawstring Detail -->
+      <circle cx="195" cy="62" r="2.5" fill="#78350F" />
+      <circle cx="205" cy="62" r="2.5" fill="#78350F" />
+      <path d="M195 64 Q190 85 185 95" stroke="#78350F" stroke-width="2" fill="none" />
+      <path d="M205 64 Q210 85 215 95" stroke="#78350F" stroke-width="2" fill="none" />
+    </g>
+  
+</svg>

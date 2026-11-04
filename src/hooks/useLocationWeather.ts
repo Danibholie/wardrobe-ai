@@ -200,22 +200,10 @@ export async function detectLocationAndWeather(
 }
 
 export function useLocationWeather() {
-  const [data, setData] = useState<LocationWeatherResult>(() => {
-    // Synchronously hydrate from cache if available
-    if (typeof window !== "undefined") {
-      try {
-        const cached = localStorage.getItem(CACHE_KEY);
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Date.now() - parsed.timestamp < CACHE_DURATION_MS) {
-            return { ...parsed.data, isLoading: false };
-          }
-        }
-      } catch {
-        // Fall back to default
-      }
-    }
-    return { ...DEFAULT_LOCATION_WEATHER, isLoading: true };
+  // Always initialize with identical state on server and client to prevent SSR hydration mismatches
+  const [data, setData] = useState<LocationWeatherResult>({
+    ...DEFAULT_LOCATION_WEATHER,
+    isLoading: true,
   });
 
   const refresh = useCallback(async (forceGps = false) => {
@@ -228,26 +216,24 @@ export function useLocationWeather() {
     let isMounted = true;
 
     async function init() {
-      // Check cache age
+      // Check cache in localStorage safely on the client after initial hydration
       let shouldFetch = true;
-      if (typeof window !== "undefined") {
-        try {
-          const cached = localStorage.getItem(CACHE_KEY);
-          if (cached) {
-            const parsed = JSON.parse(cached);
-            if (Date.now() - parsed.timestamp < CACHE_DURATION_MS) {
-              if (isMounted) {
-                setData({ ...parsed.data, isLoading: false });
-              }
-              // If cached is less than 10 mins old, skip background re-fetch
-              if (Date.now() - parsed.timestamp < 10 * 60 * 1000) {
-                shouldFetch = false;
-              }
+      try {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Date.now() - parsed.timestamp < CACHE_DURATION_MS) {
+            if (isMounted) {
+              setData({ ...parsed.data, isLoading: false });
+            }
+            // If cached is less than 10 mins old, skip background re-fetch
+            if (Date.now() - parsed.timestamp < 10 * 60 * 1000) {
+              shouldFetch = false;
             }
           }
-        } catch {
-          // Continue to fetch
         }
+      } catch {
+        // Continue to fetch
       }
 
       if (shouldFetch) {
