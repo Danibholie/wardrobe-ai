@@ -247,7 +247,7 @@ export function Navbar({ user }: NavbarProps) {
                           className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-body-sm text-on-surface hover:bg-surface-container transition-colors"
                         >
                           <Activity className="w-4 h-4 text-secondary shrink-0" />
-                          <span>System Health</span>
+                          <span>Admin Dashboard</span>
                         </Link>
 
                         <div className="flex items-center gap-3 px-3 pt-1 text-[11px] text-on-surface-variant/70">
@@ -366,7 +366,7 @@ export function Navbar({ user }: NavbarProps) {
                     className="flex items-center gap-1.5 text-xs text-on-surface-variant hover:text-on-surface transition-colors"
                   >
                     <Activity className="w-3.5 h-3.5 text-secondary shrink-0" />
-                    <span>System Health</span>
+                    <span>Admin Dashboard</span>
                   </Link>
                   <SignOutButton
                     variant="ghost"
