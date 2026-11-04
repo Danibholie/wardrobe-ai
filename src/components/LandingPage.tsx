@@ -4,12 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
-interface FaqItem {
+export interface FaqItem {
   question: string;
   answer: string;
 }
 
-const faqs: FaqItem[] = [
+export const faqs: FaqItem[] = [
   {
     question: "What exactly is Wardrobe AI?",
     answer:
@@ -342,7 +342,7 @@ export default function LandingPage() {
             <div className="mt-14 max-w-5xl mx-auto rounded-3xl bg-white p-3 sm:p-5 shadow-2xl border border-ivory-300">
               <div className="relative rounded-2xl overflow-hidden shadow-inner bg-stone-900 group">
                 <img
-                  alt="Wardrobe AI curated setup showcase"
+                  alt="Wardrobe AI curated outfit showcase for Lagos Island weather and lifestyle"
                   className="w-full h-auto object-cover max-h-[560px] mx-auto filter saturate-105"
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuAOfe3XbHenCa-ZZo8nQO0tJp6m51o7c9UQcOdhboh95mrVwGLo-jQewUXdor0Nmny4Z356U2D2aGvpX8VqvdLUQq6bMH1_T0a_JsFY_ySfe7iTmPSP9bSvz-LVBLyUv9n8R_ICy4mbtMpoGIPhWT0BPXxHICxMdid3_iaXmJIV_2PG74GCdomU2X7F2RKLJ2mTXl7HT1TGlhkN1SY63LZnA6jkwl6mqJv5BL94BeFnWAGy0_rDuq6dMg"
                 />
@@ -595,7 +595,7 @@ export default function LandingPage() {
             <div className="bg-white rounded-3xl p-4 sm:p-6 shadow-xl border border-ivory-300">
               <div className="rounded-2xl overflow-hidden border border-ivory-300 shadow-sm">
                 <img
-                  alt="Wardrobe AI Live Dashboard Interface"
+                  alt="Wardrobe AI Live Dashboard Interface — daily morning outfit command center with real-time weather"
                   className="w-full h-auto object-cover"
                   src="https://lh3.googleusercontent.com/aida-public/AB6AXuCrZ0oNPw93bjF9bbp9_4mRcXrMPBaw8g0rNaPE8ayluiDrIVJjo1GFLiwaZOX6XEDBl7artYs_tiSfa9plkWVLjWuQbZLpJm5nkjTcilTG4lTRa6y8bHqCgFRyXNwRijAwm6UgdhunLeolnMlH6Gj78BXIfzNS9kLREwZgJxf6kViNwkTe_hDKtHSmaVLARO6_WhryphlgfJWex55c4FaYCKc28ndLXhIhR3LNNvt3bTcbYdQtY9QCHg"
                 />

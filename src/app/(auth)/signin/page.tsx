@@ -6,8 +6,16 @@ import { auth, signIn } from "@/auth";
 import { GoogleSignInButton } from "./GoogleSignInButton";
 
 export const metadata: Metadata = {
-  title: "Sign In · Wardrobe AI",
-  description: "Sign in to access your wardrobe collection and personal style recommendations.",
+  title: "Sign In — Wardrobe AI",
+  description:
+    "Sign in to your Wardrobe AI account to access your digital wardrobe, live weather styling, and saved outfit collection.",
+  alternates: {
+    canonical: "https://wardrobeai.com.ng/signin",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 type SignInPageProps = {

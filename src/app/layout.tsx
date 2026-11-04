@@ -1,44 +1,40 @@
 import type { Metadata, Viewport } from "next";
+import { SITE_CONFIG } from "@/lib/site";
 import "./globals.css";
-
-const siteUrl = "https://lbd-wardrobe-ai.netlify.app";
-const brandLogoUrl =
-  "https://lbd-wardrobe-ai.netlify.app/wardrobe-ai-logo.webp";
-
-const ogImageUrl = `${siteUrl}/og-image.png`;
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
-  themeColor: "#202f26",
+  themeColor: "#183325",
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(SITE_CONFIG.url),
   title: {
-    default: "Wardrobe AI · Curated Wardrobe Architecture",
-    template: "%s | Wardrobe AI",
+    default: `${SITE_CONFIG.name} — Smart Outfit Planner & AI Stylist in Nigeria`,
+    template: `%s | ${SITE_CONFIG.name}`,
   },
-  description:
-    "Your wardrobe already has the answer. Intelligent outfit recommendations for Lagos weather, occasions, and everyday life in Nigeria.",
-  applicationName: "Wardrobe AI",
-  authors: [{ name: "Wardrobe AI" }],
+  description: SITE_CONFIG.description,
+  applicationName: SITE_CONFIG.name,
+  authors: [{ name: SITE_CONFIG.author.name, url: SITE_CONFIG.author.url }],
   generator: "Next.js",
-  keywords: [
-    "Wardrobe AI",
-    "AI Stylist",
-    "Lagos Fashion",
-    "Outfit Recommendations",
-    "Capsule Wardrobe",
-    "Nigerian Fashion",
-    "Owambe",
-    "Senator Wear",
-    "Kaftan",
-    "Weather Adaptive Styling",
-  ],
-  creator: "Wardrobe AI",
-  publisher: "Wardrobe AI",
+  keywords: [...SITE_CONFIG.keywords],
+  creator: SITE_CONFIG.name,
+  publisher: SITE_CONFIG.company.name,
+  category: "Lifestyle & Fashion",
+  alternates: {
+    canonical: SITE_CONFIG.url,
+    languages: {
+      "en-NG": SITE_CONFIG.url,
+      en: SITE_CONFIG.url,
+    },
+  },
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
   robots: {
     index: true,
     follow: true,
@@ -51,43 +47,42 @@ export const metadata: Metadata = {
     },
   },
   icons: {
-    icon: [{ url: "/favicon.ico" }, { url: brandLogoUrl, type: "image/png" }],
-    shortcut: [brandLogoUrl],
-    apple: [{ url: brandLogoUrl, sizes: "180x180", type: "image/png" }],
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/wardrobe-ai-logo.webp", type: "image/webp" },
+    ],
+    shortcut: ["/wardrobe-ai-logo.webp"],
+    apple: [
+      { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
+      { url: "/wardrobe-ai-logo.webp", sizes: "512x512", type: "image/webp" },
+    ],
   },
   manifest: "/manifest.json",
   openGraph: {
     type: "website",
-    locale: "en_NG",
-    url: siteUrl,
-    title: "Wardrobe AI · Curated Wardrobe Architecture",
-    description:
-      "Your wardrobe already has the answer. Intelligent outfit recommendations for Lagos weather, occasions, and everyday life in Nigeria.",
-    siteName: "Wardrobe AI",
+    locale: SITE_CONFIG.locale,
+    url: SITE_CONFIG.url,
+    siteName: SITE_CONFIG.name,
+    title: `${SITE_CONFIG.name} — Smart Outfit Planner & AI Stylist in Nigeria`,
+    description: SITE_CONFIG.description,
     images: [
       {
         url: "/og-image.png",
-        secureUrl: ogImageUrl,
+        secureUrl: SITE_CONFIG.ogImage,
         width: 1672,
         height: 941,
-        alt: "Wardrobe AI · Your wardrobe. Smarter.",
+        alt: `${SITE_CONFIG.name} · Your Wardrobe. Your Weather. Your Day.`,
         type: "image/png",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Wardrobe AI · Curated Wardrobe Architecture",
-    description:
-      "Intelligent outfit recommendations strictly curated from clothes you already own.",
-    images: [
-      {
-        url: "/og-image.png",
-        width: 1672,
-        height: 941,
-        alt: "Wardrobe AI · Your wardrobe. Smarter.",
-      },
-    ],
+    title: `${SITE_CONFIG.name} — Smart Outfit Planner & AI Stylist in Nigeria`,
+    description: SITE_CONFIG.description,
+    images: [SITE_CONFIG.ogImage],
+    creator: SITE_CONFIG.social.twitterHandle,
+    site: SITE_CONFIG.social.twitterHandle,
   },
 };
 
@@ -111,11 +106,6 @@ export default function RootLayout({
         />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="format-detection" content="telephone=no" />
-        <meta name="theme-color" content="#121212" />
-        <link rel="icon" href="/favicon.ico" />
-        <link rel="icon" href="/wardrobe-ai-logo.webp" type="image/png" />
-        <link rel="apple-touch-icon" href="/wardrobe-ai-logo.webp" />
         <meta name="apple-mobile-web-app-title" content="Wardrobe AI" />
       </head>
       <body className="bg-background font-body-md text-on-surface antialiased min-h-screen flex flex-col">
