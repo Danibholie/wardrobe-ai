@@ -1531,14 +1531,20 @@ export default function LandingPage() {
                   </a>
                 </li>
                 <li>
-                  <a className="hover:text-white transition-colors" href="#">
+                  <Link
+                    className="hover:text-white transition-colors"
+                    href="/privacy"
+                  >
                     Privacy Policy
-                  </a>
+                  </Link>
                 </li>
                 <li>
-                  <a className="hover:text-white transition-colors" href="#">
+                  <Link
+                    className="hover:text-white transition-colors"
+                    href="/terms"
+                  >
                     Terms of Service
-                  </a>
+                  </Link>
                 </li>
               </ul>
             </div>
