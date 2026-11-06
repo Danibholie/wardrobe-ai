@@ -302,7 +302,7 @@ export async function GET() {
       PaymentTransaction.find()
         .sort({ createdAt: -1 })
         .limit(10)
-        .select("txRef flwTransactionId amount currency status paymentType customerEmail customerName paidAt createdAt")
+        .select("txRef flwTransactionId amount currency status paymentType customerEmail customerName paidAt createdAt planCycle")
         .lean(),
     ]);
 

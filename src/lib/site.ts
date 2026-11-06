@@ -44,10 +44,11 @@ export const SITE_CONFIG = {
     url: BASE_URL,
   },
   social: {
-    twitter: "https://twitter.com/WardrobeAI",
-    twitterHandle: "@WardrobeAI",
-    instagram: "https://instagram.com/WardrobeAI",
-    linkedin: "https://linkedin.com/company/wardrobe-ai",
+    twitter: "https://twitter.com/WardrobeAING",
+    twitterHandle: "@WardrobeAING",
+    tiktok: "https://www.tiktok.com/@wardrobeaing",
+    instagram: "https://instagram.com/WardrobeAING",
+    linkedin: "https://linkedin.com/company/WardrobeAING",
   },
   locale: "en_NG",
 } as const;

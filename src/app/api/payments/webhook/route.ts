@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { connectDB } from "@/lib/db";
 import PaymentTransaction from "@/models/PaymentTransaction";
-import { grantProSubscription, PRO_PRICE_NGN } from "@/lib/subscription";
+import { grantProSubscription, getPlanDetails, BillingCycle } from "@/lib/subscription";
 
 export async function POST(request: Request) {
   try {
@@ -88,20 +88,26 @@ export async function POST(request: Request) {
 
     const verified = verifyData.data;
 
-    // Verify amount and currency
-    if (verified.amount < PRO_PRICE_NGN || verified.currency !== "NGN") {
-      console.warn(
-        `Webhook amount mismatch: expected at least ${PRO_PRICE_NGN} NGN, received ${verified.amount} ${verified.currency}`
-      );
-      return NextResponse.json({ message: "Amount mismatch" }, { status: 400 });
-    }
-
     await connectDB();
 
-    // Find the matching transaction
+    // Find the matching transaction record
     const transaction = await PaymentTransaction.findOne({
       $or: [{ txRef: verified.tx_ref }, { flwTransactionId: String(verified.id) }],
     });
+
+    const isAnnual =
+      transaction?.planCycle === "annual" ||
+      verified.meta?.billingCycle === "annual" ||
+      Number(verified.amount) >= 15000;
+    const plan = getPlanDetails(isAnnual ? "annual" : "monthly");
+
+    // Verify amount and currency
+    if (Number(verified.amount) < plan.priceNgn || verified.currency !== "NGN") {
+      console.warn(
+        `Webhook amount mismatch: expected at least ${plan.priceNgn} NGN for ${plan.title}, received ${verified.amount} ${verified.currency}`
+      );
+      return NextResponse.json({ message: "Amount mismatch" }, { status: 400 });
+    }
 
     if (transaction) {
       // Atomic compare-and-swap status transition prevents duplicate activation
@@ -113,6 +119,7 @@ export async function POST(request: Request) {
         {
           $set: {
             status: "successful",
+            planCycle: plan.cycle,
             flwTransactionId: String(verified.id),
             paymentType: verified.payment_type || undefined,
             paidAt: new Date(verified.created_at || Date.now()),
@@ -126,7 +133,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ status: "already_processed" }, { status: 200 });
       }
 
-      await grantProSubscription(transaction.userId.toString(), 30);
+      await grantProSubscription(transaction.userId.toString(), plan.durationDays);
     } else {
       console.warn("Transaction reference not found in database:", verified.tx_ref);
     }

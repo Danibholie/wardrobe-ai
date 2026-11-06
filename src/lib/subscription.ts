@@ -5,8 +5,46 @@ import WardrobeItem from "@/models/WardrobeItem";
 export const STARTER_ITEM_LIMIT = 20;
 export const STARTER_DAILY_GENERATIONS = 1;
 export const STARTER_ACTIVE_WARDROBE_WINDOW = 20;
-export const PRO_PRICE_NGN = 1500;
-export const PRO_DURATION_DAYS = 30;
+export const PRO_PRICE_MONTHLY_NGN = 1500;
+export const PRO_DURATION_DAYS_MONTHLY = 30;
+export const PRO_PRICE_ANNUAL_NGN = 15000;
+export const PRO_DURATION_DAYS_ANNUAL = 365;
+
+// Backward compatibility aliases
+export const PRO_PRICE_NGN = PRO_PRICE_MONTHLY_NGN;
+export const PRO_DURATION_DAYS = PRO_DURATION_DAYS_MONTHLY;
+
+export type BillingCycle = "monthly" | "annual";
+
+export interface PlanDetails {
+  cycle: BillingCycle;
+  priceNgn: number;
+  durationDays: number;
+  title: string;
+  description: string;
+  productKey: string;
+}
+
+export function getPlanDetails(cycle: BillingCycle = "monthly"): PlanDetails {
+  if (cycle === "annual") {
+    return {
+      cycle: "annual",
+      priceNgn: PRO_PRICE_ANNUAL_NGN,
+      durationDays: PRO_DURATION_DAYS_ANNUAL,
+      title: "Wardrobe Pro (Annual)",
+      description: "365-Day Pass: Unlimited clothes & daily AI styling (2 months free)",
+      productKey: "wardrobe_pro_365_days",
+    };
+  }
+  return {
+    cycle: "monthly",
+    priceNgn: PRO_PRICE_MONTHLY_NGN,
+    durationDays: PRO_DURATION_DAYS_MONTHLY,
+    title: "Wardrobe Pro (Monthly)",
+    description: "30-Day Pass: Unlimited clothes & daily AI styling",
+    productKey: "wardrobe_pro_30_days",
+  };
+}
 
 export interface SubscriptionInfo {
   tier: "starter" | "pro";
@@ -331,8 +369,8 @@ export async function grantProSubscription(
     baseDate = new Date(user.subscriptionExpiresAt);
   }
 
-  // Cap maximum prepaid subscription duration at 365 days to prevent overflow or abuse
-  const maxAllowedFuture = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
+  // Cap maximum prepaid subscription duration at 730 days (2 years) to support stackable annual extensions safely
+  const maxAllowedFuture = new Date(now.getTime() + 730 * 24 * 60 * 60 * 1000);
   const targetExpiry = new Date(
     baseDate.getTime() + durationDays * 24 * 60 * 60 * 1000
   );

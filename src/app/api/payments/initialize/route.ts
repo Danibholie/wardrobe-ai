@@ -3,7 +3,7 @@ import crypto from "crypto";
 import { auth } from "@/auth";
 import { connectDB } from "@/lib/db";
 import PaymentTransaction from "@/models/PaymentTransaction";
-import { PRO_PRICE_NGN } from "@/lib/subscription";
+import { BillingCycle, getPlanDetails } from "@/lib/subscription";
 import { SITE_CONFIG } from "@/lib/site";
 
 export async function POST(request: Request) {
@@ -31,6 +31,15 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
+
+    const body = await request.json().catch(() => ({}));
+    const requestedCycle =
+      typeof body?.billingCycle === "string"
+        ? body.billingCycle.toLowerCase().trim()
+        : "monthly";
+    const billingCycle: BillingCycle =
+      requestedCycle === "annual" ? "annual" : "monthly";
+    const plan = getPlanDetails(billingCycle);
 
     await connectDB();
 
@@ -72,9 +81,10 @@ export async function POST(request: Request) {
     await PaymentTransaction.create({
       userId,
       txRef,
-      amount: PRO_PRICE_NGN,
+      amount: plan.priceNgn,
       currency: "NGN",
       status: "pending",
+      planCycle: plan.cycle,
       customerEmail: userEmail,
       customerName: userName,
     });
@@ -88,7 +98,7 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         tx_ref: txRef,
-        amount: PRO_PRICE_NGN,
+        amount: plan.priceNgn,
         currency: "NGN",
         redirect_url: `${origin}/wardrobe?payment_verify=1&tx_ref=${txRef}`,
         customer: {
@@ -96,13 +106,14 @@ export async function POST(request: Request) {
           name: userName,
         },
         customizations: {
-          title: "Wardrobe Pro (₦1,500)",
-          description: "30-Day Pass: Unlimited clothes & daily AI styling",
+          title: plan.title,
+          description: plan.description,
           logo: `${origin}/icon1.png`,
         },
         meta: {
           userId,
-          product: "wardrobe_pro_30_days",
+          billingCycle: plan.cycle,
+          product: plan.productKey,
         },
       }),
     });

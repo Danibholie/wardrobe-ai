@@ -1227,9 +1227,11 @@ export default function LandingPage() {
                 </div>
                 <Link
                   className="w-full text-center py-3 px-6 rounded-full bg-forest text-white text-sm font-semibold hover:bg-forest-dark transition-colors shadow-md"
-                  href="/signin?callbackUrl=/home"
+                  href={`/signin?callbackUrl=${encodeURIComponent(`/wardrobe?upgrade=${billingCycle}`)}`}
                 >
-                  Upgrade to Pro
+                  {billingCycle === "annual"
+                    ? "Upgrade to Annual Pro (₦15,000)"
+                    : "Upgrade to Pro (₦1,500)"}
                 </Link>
               </div>
             </div>
@@ -1252,7 +1254,9 @@ export default function LandingPage() {
                         Starter Wardrobe (Free)
                       </th>
                       <th className="py-3.5 pl-4 font-semibold text-forest">
-                        Wardrobe Pro (₦1,500 / month)
+                        {billingCycle === "annual"
+                          ? "Wardrobe Pro (₦15,000 / year)"
+                          : "Wardrobe Pro (₦1,500 / month)"}
                       </th>
                     </tr>
                   </thead>
@@ -1322,7 +1326,7 @@ export default function LandingPage() {
               <div className="bg-white p-6 rounded-2xl border border-ivory-300 shadow-sm flex flex-col justify-between">
                 <p className="text-stone-700 text-sm leading-relaxed italic">
                   &ldquo;The weather check is what won me over. Lagos Island
-                  heat is unforgiving—getting suggestions that consider light
+                  heat is unforgiving, getting suggestions that consider light
                   linen instead of heavy polyester is a game changer.&rdquo;
                 </p>
                 <div className="mt-6 flex items-center gap-3">

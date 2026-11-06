@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { connectDB } from "@/lib/db";
 import PaymentTransaction from "@/models/PaymentTransaction";
-import { grantProSubscription, PRO_PRICE_NGN } from "@/lib/subscription";
+import { grantProSubscription, getPlanDetails, BillingCycle } from "@/lib/subscription";
 
 export async function POST(request: Request) {
   try {
@@ -129,8 +129,15 @@ export async function POST(request: Request) {
       );
     }
 
+    // Determine expected plan details based on record or amount
+    const planCycle: BillingCycle =
+      transaction.planCycle === "annual" || flwData.amount >= 15000
+        ? "annual"
+        : "monthly";
+    const plan = getPlanDetails(planCycle);
+
     // Validate payment amount & currency (reject underpayments and incorrect currencies)
-    if (flwData.amount < PRO_PRICE_NGN || flwData.currency !== "NGN") {
+    if (flwData.amount < plan.priceNgn || flwData.currency !== "NGN") {
       transaction.status = "failed";
       transaction.flwData = flwData;
       await transaction.save();
@@ -138,7 +145,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           success: false,
-          message: `Invalid amount or currency detected (received ${flwData.currency} ${flwData.amount}).`,
+          message: `Invalid amount or currency detected (received ${flwData.currency} ${flwData.amount}, expected ${plan.priceNgn} NGN for ${plan.title}).`,
         },
         { status: 400 }
       );
@@ -154,6 +161,7 @@ export async function POST(request: Request) {
       {
         $set: {
           status: "successful",
+          planCycle: plan.cycle,
           flwTransactionId: String(flwData.id),
           paymentType: flwData.payment_type || undefined,
           paidAt: new Date(flwData.created_at || Date.now()),
@@ -171,12 +179,12 @@ export async function POST(request: Request) {
       });
     }
 
-    // Grant 30 days of Pro to user (guaranteed to execute at most once per transaction)
-    await grantProSubscription(transaction.userId.toString(), 30);
+    // Grant Pro days to user (guaranteed to execute at most once per transaction)
+    await grantProSubscription(transaction.userId.toString(), plan.durationDays);
 
     return NextResponse.json({
       success: true,
-      message: "Payment verified successfully! Welcome to Wardrobe Pro.",
+      message: `Payment verified successfully! Welcome to ${plan.title}.`,
     });
   } catch (error) {
     console.error("Verification error:", error);

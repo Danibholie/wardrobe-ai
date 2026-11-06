@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Sparkles,
   Check,
@@ -11,13 +11,14 @@ import {
   Crown,
   Zap,
 } from "lucide-react";
-import type { SubscriptionInfo } from "@/lib/subscription";
+import type { SubscriptionInfo, BillingCycle } from "@/lib/subscription";
 
 interface PricingModalProps {
   isOpen: boolean;
   onClose: () => void;
   subscription?: SubscriptionInfo | null;
   highlightReason?: string;
+  defaultCycle?: BillingCycle;
 }
 
 export function PricingModal({
@@ -25,9 +26,17 @@ export function PricingModal({
   onClose,
   subscription,
   highlightReason,
+  defaultCycle = "monthly",
 }: PricingModalProps) {
+  const [billingCycle, setBillingCycle] = useState<BillingCycle>(defaultCycle);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen && defaultCycle) {
+      setBillingCycle(defaultCycle);
+    }
+  }, [isOpen, defaultCycle]);
 
   if (!isOpen) return null;
 
@@ -40,6 +49,10 @@ export function PricingModal({
 
       const res = await fetch("/api/payments/initialize", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ billingCycle }),
       });
 
       const data = await res.json();
@@ -91,6 +104,43 @@ export function PricingModal({
           </div>
         )}
 
+        {/* Billing Cycle Pill Selector */}
+        <div className="flex justify-center pt-5 px-6">
+          <div className="inline-flex items-center p-1 rounded-full bg-surface-container border border-outline-variant/30 text-xs font-semibold shadow-inner">
+            <button
+              type="button"
+              onClick={() => setBillingCycle("monthly")}
+              className={`px-4 py-2 rounded-full transition-all cursor-pointer ${
+                billingCycle === "monthly"
+                  ? "bg-surface text-on-surface font-bold shadow-xs"
+                  : "text-on-surface-variant hover:text-on-surface"
+              }`}
+            >
+              Monthly (₦1,500 / 30d)
+            </button>
+            <button
+              type="button"
+              onClick={() => setBillingCycle("annual")}
+              className={`px-4 py-2 rounded-full transition-all cursor-pointer flex items-center gap-1.5 ${
+                billingCycle === "annual"
+                  ? "bg-primary text-on-primary font-bold shadow-xs"
+                  : "text-on-surface-variant hover:text-on-surface"
+              }`}
+            >
+              <span>Annual (₦15,000 / yr)</span>
+              <span
+                className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider ${
+                  billingCycle === "annual"
+                    ? "bg-on-primary/20 text-on-primary"
+                    : "bg-terracotta text-white"
+                }`}
+              >
+                Save 17%
+              </span>
+            </button>
+          </div>
+        </div>
+
         {/* Pricing Cards Comparison */}
         <div className="p-6 overflow-y-auto space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -134,7 +184,7 @@ export function PricingModal({
                   </li>
                   <li className="flex items-start gap-2 text-on-surface-variant/50">
                     <X className="w-4 h-4 text-outline shrink-0 mt-0.5" />
-                    <span>Special event & owambe styling</span>
+                    <span>Special event &amp; owambe styling</span>
                   </li>
                   <li className="flex items-start gap-2 text-on-surface-variant/50">
                     <X className="w-4 h-4 text-outline shrink-0 mt-0.5" />
@@ -172,12 +222,23 @@ export function PricingModal({
                   )}
                 </div>
                 <div className="mb-4">
-                  <span className="text-3xl font-extrabold text-on-surface">
-                    ₦1,500
-                  </span>
-                  <span className="text-xs text-on-surface-variant ml-1">
-                    / 30 days
-                  </span>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-extrabold text-on-surface">
+                      {billingCycle === "monthly" ? "₦1,500" : "₦15,000"}
+                    </span>
+                    <span className="text-xs text-on-surface-variant">
+                      {billingCycle === "monthly" ? "/ 30 days" : "/ year"}
+                    </span>
+                  </div>
+                  {billingCycle === "annual" ? (
+                    <p className="text-[11px] text-primary font-semibold mt-1">
+                      ₦1,250 / mo effective • <strong>2 months free (Save ₦3,000)</strong>
+                    </p>
+                  ) : (
+                    <p className="text-[11px] text-on-surface-variant mt-1">
+                      Flexible 30-day renewable access
+                    </p>
+                  )}
                 </div>
                 <ul className="space-y-2.5 text-xs text-on-surface mb-6">
                   <li className="flex items-start gap-2 font-medium">
@@ -202,7 +263,7 @@ export function PricingModal({
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                    <span>Deep weather intelligence (heat, humidity & rain radar)</span>
+                    <span>Deep weather intelligence (heat, humidity &amp; rain radar)</span>
                   </li>
                 </ul>
               </div>
@@ -223,13 +284,19 @@ export function PricingModal({
                     <>
                       <Crown className="w-4 h-4" />
                       <span>
-                        Renew Pro (₦1,500 for +30 Days)
+                        {billingCycle === "monthly"
+                          ? "Renew Pro (₦1,500 for +30 Days)"
+                          : "Renew Annual Pro (₦15,000 for +365 Days)"}
                       </span>
                     </>
                   ) : (
                     <>
                       <Zap className="w-4 h-4" />
-                      <span>Upgrade to Pro — ₦1,500</span>
+                      <span>
+                        {billingCycle === "monthly"
+                          ? "Upgrade to Pro — ₦1,500"
+                          : "Upgrade to Annual Pro — ₦15,000"}
+                      </span>
                     </>
                   )}
                 </button>
@@ -247,7 +314,7 @@ export function PricingModal({
           <div className="pt-2 border-t border-outline-variant/20 flex flex-wrap items-center justify-between gap-3 text-[11px] text-on-surface-variant">
             <div className="flex items-center gap-1.5">
               <ShieldCheck className="w-4 h-4 text-primary" />
-              <span>Instant activation & 256-bit encryption</span>
+              <span>Instant activation &amp; 256-bit encryption</span>
             </div>
             <div className="flex items-center gap-1.5">
               <CreditCard className="w-4 h-4 text-secondary" />

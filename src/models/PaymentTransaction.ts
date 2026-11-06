@@ -8,6 +8,7 @@ export interface IPaymentTransaction extends Document {
   currency: string;
   status: "pending" | "successful" | "failed";
   paymentType?: string;
+  planCycle?: "monthly" | "annual";
   customerEmail: string;
   customerName?: string;
   paidAt?: Date;
@@ -55,6 +56,12 @@ const PaymentTransactionSchema = new Schema<IPaymentTransaction>(
     paymentType: {
       type: String,
       trim: true,
+    },
+    planCycle: {
+      type: String,
+      enum: ["monthly", "annual"],
+      default: "monthly",
+      index: true,
     },
     customerEmail: {
       type: String,

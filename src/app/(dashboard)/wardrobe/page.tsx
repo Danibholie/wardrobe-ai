@@ -124,7 +124,17 @@ export default function WardrobePage() {
   const { subscription, refreshSubscription } = useSubscription();
   const [pricingModalOpen, setPricingModalOpen] = useState(false);
   const [pricingReason, setPricingReason] = useState<string | undefined>(undefined);
+  const [pricingDefaultCycle, setPricingDefaultCycle] = useState<"monthly" | "annual">("monthly");
   const [verifyingPayment, setVerifyingPayment] = useState(false);
+
+  // Check for deep-linked upgrade requests
+  useEffect(() => {
+    const upgrade = searchParams?.get("upgrade");
+    if (upgrade === "annual" || upgrade === "monthly" || upgrade === "pro") {
+      setPricingDefaultCycle(upgrade === "annual" ? "annual" : "monthly");
+      setPricingModalOpen(true);
+    }
+  }, [searchParams]);
 
   // Handle Flutterwave payment redirect verification
   useEffect(() => {
@@ -1039,6 +1049,7 @@ export default function WardrobePage() {
         }}
         subscription={subscription}
         highlightReason={pricingReason}
+        defaultCycle={pricingDefaultCycle}
       />
     </main>
   );

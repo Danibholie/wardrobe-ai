@@ -129,6 +129,7 @@ interface AdminData {
       currency: string;
       status: "pending" | "successful" | "failed";
       paymentType?: string;
+      planCycle?: "monthly" | "annual";
       customerEmail: string;
       customerName?: string;
       paidAt?: string;
@@ -1114,9 +1115,14 @@ export default function AdminDashboardPage() {
                   <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-forest text-white">
                     Wardrobe Pro
                   </span>
-                  <span className="font-editorial text-2xl font-bold text-forest">
-                    ₦1,500 <span className="text-xs font-normal text-stone-500">/ 30-day pass</span>
-                  </span>
+                  <div className="text-right">
+                    <span className="font-editorial text-2xl font-bold text-forest">
+                      ₦1,500 <span className="text-xs font-normal text-stone-500">/ 30-day</span>
+                    </span>
+                    <span className="text-[11px] font-semibold text-emerald-800 block">
+                      or ₦15,000 / year (Save 17%)
+                    </span>
+                  </div>
                 </div>
                 <ul className="text-xs text-stone-700 space-y-1.5">
                   <li className="flex items-center gap-2">
@@ -1126,6 +1132,10 @@ export default function AdminDashboardPage() {
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-3.5 h-3.5 text-forest shrink-0" />
                     <span><strong>Unlimited daily AI outfit generations</strong></span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-forest shrink-0" />
+                    <span>Flexible passes: <strong>30-Day (₦1,500)</strong> or <strong>Annual (₦15,000)</strong></span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-3.5 h-3.5 text-forest shrink-0" />
@@ -1192,7 +1202,12 @@ export default function AdminDashboardPage() {
                           </p>
                         </td>
                         <td className="px-4 py-3.5 font-bold text-stone-900">
-                          ₦{tx.amount.toLocaleString()} {tx.currency}
+                          <div>₦{tx.amount.toLocaleString()} {tx.currency}</div>
+                          <span className="text-[10px] font-medium text-stone-500 uppercase tracking-wider block">
+                            {tx.planCycle === "annual" || tx.amount >= 15000
+                              ? "Annual (365d)"
+                              : "Monthly (30d)"}
+                          </span>
                         </td>
                         <td className="px-4 py-3.5">
                           {tx.status === "successful" ? (
