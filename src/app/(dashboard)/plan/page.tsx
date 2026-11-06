@@ -162,6 +162,7 @@ export default function PlanPage() {
 
   const { subscription, refreshSubscription } = useSubscription();
   const [pricingOpen, setPricingOpen] = useState(false);
+  const [pricingReason, setPricingReason] = useState<string | undefined>(undefined);
   const [limitReached, setLimitReached] = useState(false);
   const [isWardrobeCapped, setIsWardrobeCapped] = useState(false);
   const [totalWardrobeCount, setTotalWardrobeCount] = useState<number>(0);
@@ -291,8 +292,10 @@ export default function PlanPage() {
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        if (data.limitReached) {
+        if (data.limitReached || data.proRequired) {
           setLimitReached(true);
+          setPricingReason(data.message);
+          setPricingOpen(true);
         }
         throw new Error(data.message || "Failed to curate an outfit.");
       }
@@ -347,6 +350,13 @@ export default function PlanPage() {
 
       const data = await res.json();
       if (!res.ok || !data.success) {
+        if (data.limitReached) {
+          setPricingReason(
+            data.message ||
+              "You have reached the 5-saved-outfit limit on Starter Wardrobe. Upgrade to Pro to save unlimited outfits."
+          );
+          setPricingOpen(true);
+        }
         throw new Error(data.message || "Could not save outfit.");
       }
 
@@ -776,18 +786,34 @@ export default function PlanPage() {
                     <div className="flex flex-wrap gap-space-xs sm:gap-space-sm" id="occasion-group">
                       {OCCASIONS.map((occ) => {
                         const isSelected = occasion === occ;
+                        const isProOnly = occ === "Wedding" || occ === "Date";
+                        const isLocked = !subscription?.isPro && isProOnly;
                         return (
                           <button
                             key={occ}
                             type="button"
-                            onClick={() => setOccasion(occ)}
-                            className={`px-space-md py-2 rounded-full font-label-md text-label-md transition-all duration-200 cursor-pointer ${
+                            onClick={() => {
+                              if (isLocked) {
+                                setPricingReason(
+                                  `Special event styling (${occ}) is exclusive to Wardrobe Pro. Upgrade to style looks for weddings, owambe, and date nights.`
+                                );
+                                setPricingOpen(true);
+                                return;
+                              }
+                              setOccasion(occ);
+                            }}
+                            className={`px-space-md py-2 rounded-full font-label-md text-label-md transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
                               isSelected
                                 ? "bg-primary-container text-on-primary shadow-sm font-semibold"
                                 : "bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-medium"
                             }`}
                           >
-                            {occ}
+                            <span>{occ}</span>
+                            {isLocked && (
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-700 border border-amber-500/30">
+                                PRO
+                              </span>
+                            )}
                           </button>
                         );
                       })}
@@ -987,9 +1013,15 @@ export default function PlanPage() {
 
       <PricingModal
         isOpen={pricingOpen}
-        onClose={() => setPricingOpen(false)}
+        onClose={() => {
+          setPricingOpen(false);
+          setPricingReason(undefined);
+        }}
         subscription={subscription}
-        highlightReason="Upgrade to Wardrobe Pro for unlimited daily outfit recommendations and full-wardrobe styling."
+        highlightReason={
+          pricingReason ||
+          "Upgrade to Wardrobe Pro for unlimited daily outfit recommendations and full-wardrobe styling."
+        }
       />
     </main>
   );

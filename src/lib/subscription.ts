@@ -1,14 +1,31 @@
 import { connectDB } from "@/lib/db";
 import User, { IUser } from "@/models/User";
 import WardrobeItem from "@/models/WardrobeItem";
+import SavedOutfit from "@/models/SavedOutfit";
 
 export const STARTER_ITEM_LIMIT = 20;
 export const STARTER_DAILY_GENERATIONS = 1;
 export const STARTER_ACTIVE_WARDROBE_WINDOW = 20;
+export const STARTER_SAVED_OUTFIT_LIMIT = 5;
 export const PRO_PRICE_MONTHLY_NGN = 1500;
 export const PRO_DURATION_DAYS_MONTHLY = 30;
 export const PRO_PRICE_ANNUAL_NGN = 15000;
 export const PRO_DURATION_DAYS_ANNUAL = 365;
+
+export const PRO_ONLY_OCCASIONS = [
+  "wedding",
+  "owambe",
+  "date",
+  "interview",
+  "gala",
+  "red carpet",
+];
+
+export function isProOnlyOccasion(occasionOrEvent: string): boolean {
+  if (!occasionOrEvent) return false;
+  const lower = occasionOrEvent.toLowerCase();
+  return PRO_ONLY_OCCASIONS.some((term) => lower.includes(term));
+}
 
 // Backward compatibility aliases
 export const PRO_PRICE_NGN = PRO_PRICE_MONTHLY_NGN;
@@ -60,6 +77,9 @@ export interface SubscriptionInfo {
   maxDailyGenerations: number;
   canGenerateOutfit: boolean;
   activeWardrobeWindow: number;
+  savedOutfitCount: number;
+  maxSavedOutfits: number;
+  canSaveMoreOutfits: boolean;
 }
 
 function getTodayString(): string {
@@ -89,6 +109,9 @@ export async function getUserSubscription(
       maxDailyGenerations: STARTER_DAILY_GENERATIONS,
       canGenerateOutfit: true,
       activeWardrobeWindow: STARTER_ACTIVE_WARDROBE_WINDOW,
+      savedOutfitCount: 0,
+      maxSavedOutfits: STARTER_SAVED_OUTFIT_LIMIT,
+      canSaveMoreOutfits: true,
     };
   }
 
@@ -142,7 +165,10 @@ export async function getUserSubscription(
     await user.save();
   }
 
-  const itemCount = await WardrobeItem.countDocuments({ userId: user._id });
+  const [itemCount, savedOutfitCount] = await Promise.all([
+    WardrobeItem.countDocuments({ userId: user._id }),
+    SavedOutfit.countDocuments({ userId: user._id }),
+  ]);
   const isPro = user.subscriptionTier === "pro";
 
   let daysRemaining = 0;
@@ -156,6 +182,7 @@ export async function getUserSubscription(
   const canGenerateOutfit =
     isPro || generationsUsedToday < STARTER_DAILY_GENERATIONS;
   const canUploadMore = isPro || itemCount < STARTER_ITEM_LIMIT;
+  const canSaveMoreOutfits = isPro || savedOutfitCount < STARTER_SAVED_OUTFIT_LIMIT;
 
   return {
     tier: isPro ? "pro" : "starter",
@@ -173,6 +200,9 @@ export async function getUserSubscription(
     maxDailyGenerations: isPro ? Infinity : STARTER_DAILY_GENERATIONS,
     canGenerateOutfit,
     activeWardrobeWindow: isPro ? itemCount : Math.min(itemCount, STARTER_ACTIVE_WARDROBE_WINDOW),
+    savedOutfitCount,
+    maxSavedOutfits: isPro ? Infinity : STARTER_SAVED_OUTFIT_LIMIT,
+    canSaveMoreOutfits,
   };
 }
 
@@ -200,6 +230,55 @@ export async function canUploadClothing(
     currentCount: sub.itemCount,
     limit: sub.maxItems,
     isPro: sub.isPro,
+  };
+}
+
+export async function canSaveOutfit(
+  userId: string
+): Promise<{
+  allowed: boolean;
+  currentCount: number;
+  limit: number;
+  isPro: boolean;
+  reason?: string;
+}> {
+  const sub = await getUserSubscription(userId);
+  if (!sub.canSaveMoreOutfits) {
+    return {
+      allowed: false,
+      currentCount: sub.savedOutfitCount,
+      limit: sub.maxSavedOutfits,
+      isPro: sub.isPro,
+      reason: `You have reached the ${STARTER_SAVED_OUTFIT_LIMIT}-outfit limit for Starter Wardrobe. Upgrade to Wardrobe Pro to save unlimited outfits.`,
+    };
+  }
+  return {
+    allowed: true,
+    currentCount: sub.savedOutfitCount,
+    limit: sub.maxSavedOutfits,
+    isPro: sub.isPro,
+  };
+}
+
+export async function canTrackWears(
+  userId: string
+): Promise<{
+  allowed: boolean;
+  isPro: boolean;
+  reason?: string;
+}> {
+  const sub = await getUserSubscription(userId);
+  if (!sub.isPro) {
+    return {
+      allowed: false,
+      isPro: false,
+      reason:
+        "Outfit History & wear counting is exclusive to Wardrobe Pro. Upgrade to track how often you rotate your looks.",
+    };
+  }
+  return {
+    allowed: true,
+    isPro: true,
   };
 }
 

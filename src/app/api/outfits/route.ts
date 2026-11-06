@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { connectDB } from "@/lib/db";
 import SavedOutfit from "@/models/SavedOutfit";
 import WardrobeItem from "@/models/WardrobeItem";
+import { canSaveOutfit } from "@/lib/subscription";
 import mongoose from "mongoose";
 
 export async function GET() {
@@ -120,6 +121,21 @@ export async function POST(request: Request) {
     }
 
     await connectDB();
+
+    // Verify user can save more outfits under subscription tier (max 5 for Starter)
+    const saveCheck = await canSaveOutfit(userId);
+    if (!saveCheck.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          limitReached: true,
+          message: saveCheck.reason,
+          currentCount: saveCheck.currentCount,
+          limit: saveCheck.limit,
+        },
+        { status: 403 }
+      );
+    }
 
     // Verify all itemIds belong to the current authenticated user
     const userOwnedItemsCount = await WardrobeItem.countDocuments({

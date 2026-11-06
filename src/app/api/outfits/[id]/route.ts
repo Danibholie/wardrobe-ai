@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { connectDB } from "@/lib/db";
 import SavedOutfit from "@/models/SavedOutfit";
+import { canTrackWears } from "@/lib/subscription";
 import mongoose from "mongoose";
 
 export async function DELETE(
@@ -80,6 +81,19 @@ export async function PATCH(
     }
 
     await connectDB();
+
+    // Verify user is permitted to use wear counter & history under subscription tier (Pro only)
+    const wearCheck = await canTrackWears(userId);
+    if (!wearCheck.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          proRequired: true,
+          message: wearCheck.reason,
+        },
+        { status: 403 }
+      );
+    }
 
     const body = await request.json().catch(() => ({}));
     const rawIncrement = typeof body.increment === "number" ? body.increment : 1;

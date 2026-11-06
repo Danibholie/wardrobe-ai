@@ -84,12 +84,32 @@ const WEATHER_PRESETS = [
 ];
 
 const EVENT_PRESETS = [
-  { label: "Owambe / Traditional Wedding", value: "Owambe / Traditional Nigerian Wedding & Reception" },
-  { label: "Corporate Work / Boardroom", value: "Corporate Office / Executive Business Meeting" },
-  { label: "Casual Weekend / Brunch", value: "Casual Weekend Brunch & Café Outing" },
-  { label: "Date Night / Romantic Dinner", value: "Date Night / Upscale Restaurant Dinner" },
-  { label: "Sunday Best / Church", value: "Sunday Best / Religious Service & Fellowship" },
-  { label: "Beach / Island Day", value: "Beach Day / Ilashe Boat Cruise & Relaxation" },
+  {
+    label: "Owambe / Traditional Wedding",
+    value: "Owambe / Traditional Nigerian Wedding & Reception",
+    isProOnly: true,
+  },
+  {
+    label: "Corporate Work / Boardroom",
+    value: "Corporate Office / Executive Business Meeting",
+  },
+  {
+    label: "Casual Weekend / Brunch",
+    value: "Casual Weekend Brunch & Café Outing",
+  },
+  {
+    label: "Date Night / Romantic Dinner",
+    value: "Date Night / Upscale Restaurant Dinner",
+    isProOnly: true,
+  },
+  {
+    label: "Sunday Best / Church",
+    value: "Sunday Best / Religious Service & Fellowship",
+  },
+  {
+    label: "Beach / Island Day",
+    value: "Beach Day / Ilashe Boat Cruise & Relaxation",
+  },
 ];
 
 const STYLE_VIBES = [
@@ -155,6 +175,7 @@ export function OutfitRecommenderModal({
 
   const { subscription } = useSubscription();
   const [pricingOpen, setPricingOpen] = useState(false);
+  const [pricingReason, setPricingReason] = useState<string | undefined>(undefined);
   const [limitReached, setLimitReached] = useState(false);
   const [isWardrobeCapped, setIsWardrobeCapped] = useState(false);
   const [totalWardrobeCount, setTotalWardrobeCount] = useState<number>(wardrobeItems.length);
@@ -192,8 +213,10 @@ export function OutfitRecommenderModal({
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        if (data.limitReached) {
+        if (data.limitReached || data.proRequired) {
           setLimitReached(true);
+          setPricingReason(data.message);
+          setPricingOpen(true);
         }
         throw new Error(data.message || "Failed to curate outfit.");
       }
@@ -229,6 +252,13 @@ export function OutfitRecommenderModal({
 
       const data = await response.json();
       if (!response.ok || !data.success) {
+        if (data.limitReached) {
+          setPricingReason(
+            data.message ||
+              "You have reached the 5-saved-outfit limit for Starter Wardrobe. Upgrade to Pro for unlimited saves."
+          );
+          setPricingOpen(true);
+        }
         throw new Error(data.message || "Could not save outfit.");
       }
 
@@ -436,18 +466,35 @@ export function OutfitRecommenderModal({
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {EVENT_PRESETS.map((event) => {
                         const isSelected = selectedEvent === event.value;
+                        const isLocked = !subscription?.isPro && (event as any).isProOnly;
                         return (
                           <button
                             type="button"
                             key={event.label}
-                            onClick={() => setSelectedEvent(event.value)}
-                            className={`p-2.5 rounded-lg text-xs font-medium text-left transition-all cursor-pointer ${
+                            onClick={() => {
+                              if (isLocked) {
+                                setPricingReason(
+                                  `Special event styling (${event.label}) is exclusive to Wardrobe Pro. Upgrade to style looks for weddings, owambe, and dates.`
+                                );
+                                setPricingOpen(true);
+                                return;
+                              }
+                              setSelectedEvent(event.value);
+                            }}
+                            className={`p-2.5 rounded-lg text-xs font-medium text-left transition-all cursor-pointer flex flex-col justify-between gap-1.5 ${
                               isSelected
                                 ? "bg-primary text-on-primary shadow-xs"
                                 : "bg-surface-container-low hover:bg-surface-container text-on-surface"
                             }`}
                           >
-                            {event.label}
+                            <span className="flex items-center justify-between w-full">
+                              <span>{event.label}</span>
+                              {isLocked && (
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-700 border border-amber-500/30">
+                                  PRO
+                                </span>
+                              )}
+                            </span>
                           </button>
                         );
                       })}
@@ -767,9 +814,15 @@ export function OutfitRecommenderModal({
 
       <PricingModal
         isOpen={pricingOpen}
-        onClose={() => setPricingOpen(false)}
+        onClose={() => {
+          setPricingOpen(false);
+          setPricingReason(undefined);
+        }}
         subscription={subscription}
-        highlightReason="Upgrade to Wardrobe Pro for unlimited daily outfit recommendations and full-wardrobe styling."
+        highlightReason={
+          pricingReason ||
+          "Upgrade to Wardrobe Pro for unlimited daily outfit recommendations and full-wardrobe styling."
+        }
       />
     </div>
   );

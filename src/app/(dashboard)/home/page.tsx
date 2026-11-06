@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { OutfitRecommenderModal } from "@/components/OutfitRecommenderModal";
 import { useLocationWeather } from "@/hooks/useLocationWeather";
+import { useSubscription } from "@/hooks/useSubscription";
 
 type WardrobeItem = {
   id: string;
@@ -53,6 +54,7 @@ const OCCASIONS = [
 ];
 
 export default function DashboardHomePage() {
+  const { subscription } = useSubscription();
   const [userName, setUserName] = useState("Bolu");
   const [wardrobeItems, setWardrobeItems] = useState<WardrobeItem[]>([]);
   const [savedOutfits, setSavedOutfits] = useState<SavedOutfit[]>([]);
@@ -219,18 +221,25 @@ export default function DashboardHomePage() {
                 >
                   {OCCASIONS.map((occ) => {
                     const isSelected = selectedOccasion.label === occ.label;
+                    const isProOnly = occ.label === "Wedding" || occ.label === "Date";
+                    const isLocked = !subscription?.isPro && isProOnly;
                     return (
                       <button
                         key={occ.label}
                         type="button"
                         onClick={() => setSelectedOccasion(occ)}
-                        className={`occasion-chip px-4 py-2 rounded-full font-label-md text-label-md transition-all duration-200 cursor-pointer ${
+                        className={`occasion-chip px-4 py-2 rounded-full font-label-md text-label-md transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
                           isSelected
                             ? "bg-primary text-on-primary shadow-sm font-semibold"
                             : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high"
                         }`}
                       >
-                        {occ.label}
+                        <span>{occ.label}</span>
+                        {isLocked && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-700 border border-amber-500/30">
+                            PRO
+                          </span>
+                        )}
                       </button>
                     );
                   })}

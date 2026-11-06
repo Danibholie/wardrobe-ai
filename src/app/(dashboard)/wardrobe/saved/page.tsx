@@ -2,6 +2,8 @@
 
 import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
+import { useSubscription } from "@/hooks/useSubscription";
+import { PricingModal } from "@/components/PricingModal";
 import {
   CheckCircle2,
   MoreVertical,
@@ -127,6 +129,9 @@ function formatDate(dateStr: string) {
 }
 
 export default function SavedOutfitsPage() {
+  const { subscription } = useSubscription();
+  const [pricingOpen, setPricingOpen] = useState(false);
+  const [pricingReason, setPricingReason] = useState<string | undefined>(undefined);
   const [userName, setUserName] = useState("Bolu");
   const [outfits, setOutfits] = useState<SavedOutfit[]>([]);
   const [loading, setLoading] = useState(true);
@@ -236,6 +241,14 @@ export default function SavedOutfitsPage() {
   }
 
   async function handleLogWear(outfit: SavedOutfit) {
+    if (!subscription?.isPro) {
+      setPricingReason(
+        "Outfit History & wear counting is exclusive to Wardrobe Pro. Upgrade to log wears and see your rotation timeline."
+      );
+      setPricingOpen(true);
+      return;
+    }
+
     const previousWearCount = outfit.wearCount || 0;
     const previousLastWorn = outfit.lastWorn;
     const newCount = previousWearCount + 1;
@@ -342,20 +355,40 @@ export default function SavedOutfitsPage() {
                 </div>
 
                 {/* Quick Wardrobe Metrics Indicator */}
-                <div className="flex items-center gap-space-sm bg-surface-container-low px-space-md py-space-xs rounded-full shadow-sm self-start md:self-auto border border-outline-variant/30">
+                <div className="flex flex-wrap items-center gap-space-sm bg-surface-container-low px-space-md py-space-xs rounded-full shadow-sm self-start md:self-auto border border-outline-variant/30">
                   <div className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-4 h-4 text-secondary flex-shrink-0" />
                     <span className="font-label-md text-label-md text-on-surface font-semibold">
                       {outfits.length}{" "}
-                      {outfits.length === 1
-                        ? "Archival Look"
-                        : "Archival Looks"}
+                      {!subscription?.isPro ? "/ 5 Saved Looks" : outfits.length === 1 ? "Archival Look" : "Archival Looks"}
                     </span>
                   </div>
-                  <span className="text-outline-variant font-light">|</span>
-                  <span className="font-body-sm text-body-sm text-on-surface-variant">
-                    Optimal for 29°C – 33°C
-                  </span>
+                  {!subscription?.isPro && (
+                    <>
+                      <span className="text-outline-variant font-light">|</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPricingReason(
+                            "Starter Wardrobe is limited to 5 saved outfits. Upgrade to Pro for unlimited saves and wear rotation tracking."
+                          );
+                          setPricingOpen(true);
+                        }}
+                        className="text-xs text-primary font-semibold hover:underline cursor-pointer flex items-center gap-1"
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-secondary" />
+                        <span>Unlock Unlimited (Pro)</span>
+                      </button>
+                    </>
+                  )}
+                  {subscription?.isPro && (
+                    <>
+                      <span className="text-outline-variant font-light">|</span>
+                      <span className="font-body-sm text-body-sm text-on-surface-variant">
+                        Unlimited Pro Archive
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -612,10 +645,19 @@ export default function SavedOutfitsPage() {
                         <button
                           type="button"
                           onClick={() => handleLogWear(outfit)}
-                          className="px-space-md py-2 bg-primary hover:bg-primary-container text-on-primary rounded-lg font-label-md text-label-md transition-all flex items-center gap-1.5 shadow-sm active:scale-95 cursor-pointer"
+                          className={`px-space-md py-2 rounded-lg font-label-md text-label-md transition-all flex items-center gap-1.5 shadow-sm active:scale-95 cursor-pointer ${
+                            !subscription?.isPro
+                              ? "bg-surface-container border border-outline-variant/30 text-on-surface hover:bg-surface-container-high"
+                              : "bg-primary hover:bg-primary-container text-on-primary"
+                          }`}
                         >
                           <Shirt className="w-4 h-4" />
                           <span>Wear today</span>
+                          {!subscription?.isPro && (
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-700 border border-amber-500/30">
+                              PRO
+                            </span>
+                          )}
                         </button>
                       </div>
                     </article>
@@ -807,6 +849,15 @@ export default function SavedOutfitsPage() {
             </div>
           </div>
         )}
+        <PricingModal
+          isOpen={pricingOpen}
+          onClose={() => {
+            setPricingOpen(false);
+            setPricingReason(undefined);
+          }}
+          subscription={subscription}
+          highlightReason={pricingReason}
+        />
       </main>
     );
 }

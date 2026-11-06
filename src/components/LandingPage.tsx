@@ -92,8 +92,8 @@ const comparisonTable: ComparisonRow[] = [
   },
   {
     feature: "AI Outfit Recommendations",
-    starter: "3 Outfit Generations per week",
-    pro: "Unlimited Outfit Generations",
+    starter: "1 Outfit Recommendation per day",
+    pro: "Unlimited Outfit Recommendations",
   },
   {
     feature: "Occasion Support",
@@ -101,9 +101,9 @@ const comparisonTable: ComparisonRow[] = [
     pro: "All occasions + Event Styling (Weddings, Owambe, Dates, Interviews)",
   },
   {
-    feature: "AI Model & Speed",
-    starter: "Standard speed (gemini-3.5-flash-lite)",
-    pro: "Priority queue & smartest reasoning (gemini-3.8-flash)",
+    feature: "AI Model & Intelligence",
+    starter: "Gemini 3.8 Flash multimodal reasoning",
+    pro: "Gemini 3.8 Flash with unlimited priority runs",
   },
   {
     feature: "Wardrobe Scope",
@@ -1112,7 +1112,7 @@ export default function LandingPage() {
                     <li className="flex items-start gap-2.5">
                       <span className="text-forest font-bold mt-0.5">✓</span>
                       <span>
-                        <strong>3 generations per week</strong>
+                        <strong>1 AI recommendation per day</strong>
                       </span>
                     </li>
                     <li className="flex items-start gap-2.5">
@@ -1121,7 +1121,7 @@ export default function LandingPage() {
                     </li>
                     <li className="flex items-start gap-2.5">
                       <span className="text-forest font-bold mt-0.5">✓</span>
-                      <span>Standard speed (gemini-3.5-flash-lite)</span>
+                      <span>Powered by <strong>Gemini 3.8 Flash</strong></span>
                     </li>
                     <li className="flex items-start gap-2.5">
                       <span className="text-forest font-bold mt-0.5">✓</span>
@@ -1199,8 +1199,8 @@ export default function LandingPage() {
                     <li className="flex items-start gap-2.5">
                       <span className="text-forest font-bold mt-0.5">✓</span>
                       <span>
-                        Priority queue &amp; smartest reasoning (
-                        <strong>gemini-3.8-flash</strong>)
+                        Unlimited multimodal reasoning (
+                        <strong>Gemini 3.8 Flash</strong>)
                       </span>
                     </li>
                     <li className="flex items-start gap-2.5">

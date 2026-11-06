@@ -182,13 +182,17 @@ export function PricingModal({
                     <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                     <span>Standard everyday occasions</span>
                   </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                    <span>Up to <strong>5 saved outfits</strong></span>
+                  </li>
                   <li className="flex items-start gap-2 text-on-surface-variant/50">
                     <X className="w-4 h-4 text-outline shrink-0 mt-0.5" />
                     <span>Special event &amp; owambe styling</span>
                   </li>
                   <li className="flex items-start gap-2 text-on-surface-variant/50">
                     <X className="w-4 h-4 text-outline shrink-0 mt-0.5" />
-                    <span>Priority AI reasoning (Gemini 3.8 Flash)</span>
+                    <span>Outfit History &amp; wear counter</span>
                   </li>
                 </ul>
               </div>
@@ -255,11 +259,15 @@ export function PricingModal({
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                    <span><strong>Unlimited saved outfits</strong> + Outfit History &amp; wear counter</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                     <span>Special occasions: <strong>Owambe, Weddings, Dates, Gala</strong></span>
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                    <span>Priority AI reasoning <strong>(Gemini 3.8 Flash)</strong></span>
+                    <span>Powered by <strong>Gemini 3.8 Flash</strong></span>
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="w-4 h-4 text-primary shrink-0 mt-0.5" />

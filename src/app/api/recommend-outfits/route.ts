@@ -9,6 +9,7 @@ import {
   tryConsumeDailyGeneration,
   refundDailyGeneration,
   STARTER_ACTIVE_WARDROBE_WINDOW,
+  isProOnlyOccasion,
 } from "@/lib/subscription";
 
 export async function POST(request: Request) {
@@ -95,6 +96,28 @@ export async function POST(request: Request) {
         `When: ${[date, timeOfDay].filter(Boolean).join(" ")}`,
       );
     const effectiveEvent = planComponents.join(" · ");
+
+    // Enforce occasion gating for special events (Owambe, Weddings, Dates)
+    if (
+      !genCheck.isPro &&
+      (isProOnlyOccasion(occasion) ||
+        isProOnlyOccasion(outing) ||
+        isProOnlyOccasion(effectiveEvent))
+    ) {
+      if (quotaClaimed && currentUserId) {
+        await refundDailyGeneration(currentUserId);
+        quotaClaimed = false;
+      }
+      return NextResponse.json(
+        {
+          success: false,
+          proRequired: true,
+          message:
+            "Special event styling (Owambe, Weddings, and Date nights) is exclusive to Wardrobe Pro. Upgrade to Pro to unlock special event styling.",
+        },
+        { status: 403 }
+      );
+    }
 
     const stylePreference =
       typeof body.stylePreference === "string" && body.stylePreference.trim()
