@@ -9,7 +9,6 @@ export interface ISavedOutfit extends Document {
   weather?: string;
   stylingTips: string[];
   itemIds: mongoose.Types.ObjectId[];
-  missingPiecesAdvice?: string;
   wearCount?: number;
   lastWorn?: Date;
   createdAt: Date;
@@ -55,10 +54,6 @@ const SavedOutfitSchema = new Schema<ISavedOutfit>(
         ref: "WardrobeItem",
       },
     ],
-    missingPiecesAdvice: {
-      type: String,
-      trim: true,
-    },
     wearCount: {
       type: Number,
       default: 0,

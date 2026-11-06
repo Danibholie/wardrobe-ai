@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   Wind,
   Shirt,
@@ -22,8 +23,12 @@ import {
   Check,
   Watch,
   SearchX,
+  Crown,
+  Zap,
 } from "lucide-react";
 import { OutfitRecommenderModal } from "@/components/OutfitRecommenderModal";
+import { useSubscription } from "@/hooks/useSubscription";
+import { PricingModal } from "@/components/PricingModal";
 
 type WardrobeItem = {
   id: string;
@@ -114,6 +119,46 @@ export default function WardrobePage() {
     string | undefined
   >(undefined);
   const [activeCardId, setActiveCardId] = useState<string | null>(null);
+
+  const searchParams = useSearchParams();
+  const { subscription, refreshSubscription } = useSubscription();
+  const [pricingModalOpen, setPricingModalOpen] = useState(false);
+  const [pricingReason, setPricingReason] = useState<string | undefined>(undefined);
+  const [verifyingPayment, setVerifyingPayment] = useState(false);
+
+  // Handle Flutterwave payment redirect verification
+  useEffect(() => {
+    const isVerify = searchParams?.get("payment_verify");
+    const txRef = searchParams?.get("tx_ref");
+    const transactionId = searchParams?.get("transaction_id");
+
+    if (isVerify && (txRef || transactionId)) {
+      setVerifyingPayment(true);
+      fetch("/api/payments/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ txRef, transactionId }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            setSuccessMessage("🎉 Payment verified successfully! Welcome to Wardrobe Pro.");
+            refreshSubscription();
+          } else {
+            setActionError(data.message || "Payment verification could not be confirmed.");
+          }
+        })
+        .catch(() => {
+          setActionError("Could not automatically verify payment. If debited, your Pro access will activate shortly.");
+        })
+        .finally(() => {
+          setVerifyingPayment(false);
+          if (typeof window !== "undefined") {
+            window.history.replaceState({}, "", "/wardrobe");
+          }
+        });
+    }
+  }, [searchParams, refreshSubscription]);
 
   useEffect(() => {
     function handleDocumentClick(e: MouseEvent) {
@@ -383,6 +428,35 @@ export default function WardrobePage() {
                 </span>{" "}
                 catalogued in your personal collection
               </p>
+
+              {/* Subscription Usage Pill */}
+              {subscription && (
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  {subscription.isPro ? (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-primary/10 border border-primary/25 text-primary text-xs font-semibold">
+                      <Crown className="w-3.5 h-3.5 text-primary" />
+                      <span>{subscription.isTrial ? "Pro Free Trial" : "Wardrobe Pro"} · Unlimited Closet</span>
+                    </span>
+                  ) : (
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container-high border border-outline-variant/30 text-xs">
+                      <span className="text-on-surface-variant">
+                        Wardrobe: <strong className="text-on-surface">{items.length} / 20 items</strong>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPricingReason("Upgrade to Wardrobe Pro to unlock unlimited clothing uploads and styling.");
+                          setPricingModalOpen(true);
+                        }}
+                        className="text-primary font-bold hover:underline cursor-pointer flex items-center gap-1 ml-1"
+                      >
+                        <Zap className="w-3 h-3" />
+                        <span>Upgrade for ₦1,500</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Top Action Buttons */}
@@ -399,18 +473,43 @@ export default function WardrobePage() {
                 </span>
               </button>
 
-              <Link
-                href="/wardrobe/add"
-                className="flex items-center justify-center gap-space-xs bg-primary hover:bg-primary-container text-on-primary px-space-md sm:px-space-lg py-3 rounded-lg shadow-md transition-all active:scale-[0.98] cursor-pointer"
-                id="open-upload-btn"
-              >
-                <Plus className="w-5 h-5 text-on-primary" />
-                <span className="font-title-md text-title-md tracking-wide">
-                  Add clothing
-                </span>
-              </Link>
+              {subscription && !subscription.canUploadMore ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPricingReason("You have reached the 20-item limit for Starter Wardrobe. Upgrade to Wardrobe Pro to upload unlimited clothes.");
+                    setPricingModalOpen(true);
+                  }}
+                  className="flex items-center justify-center gap-space-xs bg-primary hover:bg-primary-container text-on-primary px-space-md sm:px-space-lg py-3 rounded-lg shadow-md transition-all active:scale-[0.98] cursor-pointer"
+                  id="open-upload-btn"
+                >
+                  <Plus className="w-5 h-5 text-on-primary" />
+                  <span className="font-title-md text-title-md tracking-wide">
+                    Add clothing
+                  </span>
+                </button>
+              ) : (
+                <Link
+                  href="/wardrobe/add"
+                  className="flex items-center justify-center gap-space-xs bg-primary hover:bg-primary-container text-on-primary px-space-md sm:px-space-lg py-3 rounded-lg shadow-md transition-all active:scale-[0.98] cursor-pointer"
+                  id="open-upload-btn"
+                >
+                  <Plus className="w-5 h-5 text-on-primary" />
+                  <span className="font-title-md text-title-md tracking-wide">
+                    Add clothing
+                  </span>
+                </Link>
+              )}
             </div>
           </div>
+
+          {/* Payment Verification Feedback */}
+          {verifyingPayment && (
+            <div className="mb-space-md rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-primary flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin text-primary shrink-0" />
+              <span>Verifying your Flutterwave payment and activating Wardrobe Pro...</span>
+            </div>
+          )}
 
           {/* Feedback Messages */}
           {successMessage && (
@@ -929,6 +1028,17 @@ export default function WardrobePage() {
         }}
         wardrobeItems={items}
         preselectedAnchorItemId={stylistAnchorItem}
+      />
+
+      {/* Subscription Pricing Modal */}
+      <PricingModal
+        isOpen={pricingModalOpen}
+        onClose={() => {
+          setPricingModalOpen(false);
+          setPricingReason(undefined);
+        }}
+        subscription={subscription}
+        highlightReason={pricingReason}
       />
     </main>
   );

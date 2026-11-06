@@ -21,9 +21,13 @@ import {
   Wind,
   Glasses,
   Plus,
+  Crown,
+  Zap,
 } from "lucide-react";
 import { formatAiError } from "@/lib/errors";
 import { useLocationWeather, detectLocationAndWeather } from "@/hooks/useLocationWeather";
+import { useSubscription } from "@/hooks/useSubscription";
+import { PricingModal } from "@/components/PricingModal";
 
 export type WardrobeItem = {
   id: string;
@@ -42,7 +46,6 @@ export type CuratedOutfit = {
   weatherSuitability: string;
   stylingTips: string[];
   itemIds: string[];
-  missingPiecesAdvice?: string;
   items: WardrobeItem[];
 };
 
@@ -150,6 +153,12 @@ export function OutfitRecommenderModal({
   const [savingIndex, setSavingIndex] = useState<number | null>(null);
   const [viewStep, setViewStep] = useState<"form" | "results">("form");
 
+  const { subscription } = useSubscription();
+  const [pricingOpen, setPricingOpen] = useState(false);
+  const [limitReached, setLimitReached] = useState(false);
+  const [isWardrobeCapped, setIsWardrobeCapped] = useState(false);
+  const [totalWardrobeCount, setTotalWardrobeCount] = useState<number>(wardrobeItems.length);
+
   if (!isOpen) return null;
 
   const effectiveWeather = isCustomWeather ? customWeather : selectedWeather;
@@ -164,6 +173,7 @@ export function OutfitRecommenderModal({
 
     setGenerating(true);
     setError(null);
+    setLimitReached(false);
 
     try {
       const response = await fetch("/api/recommend-outfits", {
@@ -182,10 +192,15 @@ export function OutfitRecommenderModal({
       const data = await response.json();
 
       if (!response.ok || !data.success) {
+        if (data.limitReached) {
+          setLimitReached(true);
+        }
         throw new Error(data.message || "Failed to curate outfit.");
       }
 
       setCuratedOutfits(data.outfits || []);
+      setIsWardrobeCapped(Boolean(data.isWardrobeCapped));
+      setTotalWardrobeCount(data.totalWardrobeCount || wardrobeItems.length);
       setSavedOutfitIndexes({});
       setViewStep("results");
     } catch (err) {
@@ -209,7 +224,6 @@ export function OutfitRecommenderModal({
           weather: effectiveWeather,
           stylingTips: outfit.stylingTips,
           itemIds: outfit.items.map((i) => i.id),
-          missingPiecesAdvice: outfit.missingPiecesAdvice,
         }),
       });
 
@@ -501,7 +515,25 @@ export function OutfitRecommenderModal({
                   </select>
                 </div>
 
-                {error && (
+                {limitReached ? (
+                  <div
+                    role="alert"
+                    className="p-4 rounded-xl bg-secondary-container/40 border border-secondary/25 text-xs text-on-secondary-container flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs"
+                  >
+                    <div className="flex items-start gap-2.5">
+                      <Zap className="w-4 h-4 shrink-0 text-secondary mt-0.5" />
+                      <span>{error}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setPricingOpen(true)}
+                      className="px-3.5 py-1.5 rounded-lg bg-primary text-on-primary font-bold hover:bg-primary/95 transition-all text-xs flex items-center gap-1.5 cursor-pointer shrink-0 shadow-xs"
+                    >
+                      <Crown className="w-3.5 h-3.5" />
+                      <span>Upgrade to Pro — ₦1,500</span>
+                    </button>
+                  </div>
+                ) : error ? (
                   <div
                     role="alert"
                     className="p-3.5 rounded-xl bg-red-50/90 border border-red-200 text-xs text-red-800 flex items-start gap-2.5 leading-relaxed shadow-2xs"
@@ -509,7 +541,7 @@ export function OutfitRecommenderModal({
                     <AlertCircle className="w-4 h-4 shrink-0 text-red-600 mt-0.5" />
                     <span className="flex-1">{error}</span>
                   </div>
-                )}
+                ) : null}
 
                 {/* Submit Action */}
                 <div className="pt-2 flex items-center justify-end gap-3 border-t border-outline-variant/20">
@@ -557,6 +589,25 @@ export function OutfitRecommenderModal({
                 <span>Adjust Context & Regenerate</span>
               </button>
             </div>
+
+            {/* Active Wardrobe Window Notice for Starter */}
+            {isWardrobeCapped && (
+              <div className="p-3.5 rounded-xl bg-surface-container-high border border-outline-variant/30 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs text-on-surface-variant">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-secondary shrink-0" />
+                  <span>
+                    Outfits styled from your <strong>20 active pieces</strong>. Upgrade to Pro to include all {totalWardrobeCount} items in your closet!
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPricingOpen(true)}
+                  className="text-primary font-bold hover:underline shrink-0 text-left sm:text-right cursor-pointer"
+                >
+                  Unlock All ({totalWardrobeCount} items) →
+                </button>
+              </div>
+            )}
 
             <div className="space-y-6">
               {curatedOutfits.map((outfit, index) => {
@@ -689,16 +740,6 @@ export function OutfitRecommenderModal({
                         </ul>
                       </div>
                     )}
-
-                    {/* Missing Piece Finisher */}
-                    {outfit.missingPiecesAdvice && (
-                      <div className="p-3 rounded-xl bg-secondary/10 border border-secondary/20 text-xs text-[#835336]">
-                        <strong className="block font-semibold mb-0.5">
-                          Finishing Touch (Not in archive):
-                        </strong>
-                        <span>{outfit.missingPiecesAdvice}</span>
-                      </div>
-                    )}
                   </div>
                 );
               })}
@@ -723,6 +764,13 @@ export function OutfitRecommenderModal({
           </div>
         )}
       </div>
+
+      <PricingModal
+        isOpen={pricingOpen}
+        onClose={() => setPricingOpen(false)}
+        subscription={subscription}
+        highlightReason="Upgrade to Wardrobe Pro for unlimited daily outfit recommendations and full-wardrobe styling."
+      />
     </div>
   );
 }

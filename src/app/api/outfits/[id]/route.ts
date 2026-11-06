@@ -82,7 +82,12 @@ export async function PATCH(
     await connectDB();
 
     const body = await request.json().catch(() => ({}));
-    const countIncrement = typeof body.increment === "number" ? body.increment : 1;
+    const rawIncrement = typeof body.increment === "number" ? body.increment : 1;
+    // Bound increment between 1 and 5 to prevent integer overflow, negative manipulation, or counter tampering
+    const countIncrement =
+      Number.isInteger(rawIncrement) && rawIncrement > 0 && rawIncrement <= 5
+        ? rawIncrement
+        : 1;
 
     const updated = await SavedOutfit.findOneAndUpdate(
       { _id: id, userId },

@@ -48,13 +48,14 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon.ico" },
-      { url: "/wardrobe-ai-logo.webp", type: "image/webp" },
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.png", type: "image/png", sizes: "192x192" },
+      { url: "/wardrobe-ai-logo.webp", type: "image/webp", sizes: "512x512" },
     ],
-    shortcut: ["/wardrobe-ai-logo.webp"],
+    shortcut: "/favicon.ico",
     apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
       { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
-      { url: "/wardrobe-ai-logo.webp", sizes: "512x512", type: "image/webp" },
     ],
   },
   manifest: "/manifest.json",
@@ -67,10 +68,10 @@ export const metadata: Metadata = {
     description: SITE_CONFIG.description,
     images: [
       {
-        url: "/og-image.png",
+        url: SITE_CONFIG.ogImage,
         secureUrl: SITE_CONFIG.ogImage,
-        width: 1672,
-        height: 941,
+        width: 1200,
+        height: 630,
         alt: `${SITE_CONFIG.name} · Your Wardrobe. Your Weather. Your Day.`,
         type: "image/png",
       },
@@ -80,7 +81,14 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: `${SITE_CONFIG.name} — Smart Outfit Planner & AI Stylist in Nigeria`,
     description: SITE_CONFIG.description,
-    images: [SITE_CONFIG.ogImage],
+    images: [
+      {
+        url: SITE_CONFIG.ogImage,
+        width: 1200,
+        height: 630,
+        alt: `${SITE_CONFIG.name} · Your Wardrobe. Your Weather. Your Day.`,
+      },
+    ],
     creator: SITE_CONFIG.social.twitterHandle,
     site: SITE_CONFIG.social.twitterHandle,
   },
@@ -94,6 +102,10 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full scroll-smooth">
       <head>
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="shortcut icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <meta name="google-site-verification" content="49a04c0a6cd0f5bb" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"

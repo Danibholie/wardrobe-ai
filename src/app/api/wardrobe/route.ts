@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { connectDB } from "@/lib/db";
 import WardrobeItem from "@/models/WardrobeItem";
+import { canUploadClothing } from "@/lib/subscription";
 
 const allowedCategories = [
   "tops",
@@ -22,6 +23,20 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { success: false, message: "Please sign in to save clothing." },
         { status: 401 },
+      );
+    }
+
+    const uploadCheck = await canUploadClothing(userId);
+    if (!uploadCheck.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          limitReached: true,
+          message: uploadCheck.reason,
+          currentCount: uploadCheck.currentCount,
+          limit: uploadCheck.limit,
+        },
+        { status: 403 },
       );
     }
 
@@ -78,6 +93,23 @@ export async function POST(request: Request) {
     }
 
     await connectDB();
+
+    // Re-verify current live count right before insert to prevent concurrent race condition bypasses
+    if (!uploadCheck.isPro) {
+      const liveItemCount = await WardrobeItem.countDocuments({ userId });
+      if (liveItemCount >= uploadCheck.limit) {
+        return NextResponse.json(
+          {
+            success: false,
+            limitReached: true,
+            message: uploadCheck.reason,
+            currentCount: liveItemCount,
+            limit: uploadCheck.limit,
+          },
+          { status: 403 },
+        );
+      }
+    }
 
     const item = await WardrobeItem.create({
       userId,

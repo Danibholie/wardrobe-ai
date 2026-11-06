@@ -62,7 +62,7 @@ export function JsonLd({ faqs }: JsonLdProps) {
         priceCurrency: "NGN",
         category: "Free",
         description:
-          "Up to 15-20 wardrobe items, 3 AI outfit generations per week, standard daily occasions.",
+          "Up to 20 wardrobe items, 1 AI outfit generation per day with live Nigerian weather integration.",
       },
       {
         "@type": "Offer",
@@ -77,7 +77,7 @@ export function JsonLd({ faqs }: JsonLdProps) {
           unitText: "MONTH",
         },
         description:
-          "Unlimited wardrobe items, unlimited daily outfit recommendations, event styling (Owambe, Weddings, Dates), and smart What to Buy Next advice.",
+          "Unlimited wardrobe items, unlimited daily outfit recommendations, event styling (Owambe, Weddings, Dates), full closet rotation, and 3-day free trial on signup.",
       },
     ],
     featureList: [
@@ -86,7 +86,7 @@ export function JsonLd({ faqs }: JsonLdProps) {
       "Live weather and humidity synchronization for Lagos, Abuja, and Nigerian cities",
       "Occasion styling for Work, Church, Owambe, Dates, and Casual",
       "Anchor item styling (Style around any piece)",
-      "What to Buy Next smart shopping recommendations",
+      "Zero external shopping links — 100% styled from your wardrobe",
       "Saved outfits library and wear counter",
     ],
   };

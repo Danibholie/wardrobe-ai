@@ -40,7 +40,6 @@ export async function GET() {
       location: outfit.location || "",
       weather: outfit.weather || "",
       stylingTips: outfit.stylingTips || [],
-      missingPiecesAdvice: outfit.missingPiecesAdvice || "",
       wearCount: (outfit as any).wearCount || 0,
       lastWorn: (outfit as any).lastWorn || null,
       createdAt: outfit.createdAt,
@@ -94,10 +93,6 @@ export async function POST(request: Request) {
       typeof body.location === "string" ? body.location.trim() : "";
     const weather =
       typeof body.weather === "string" ? body.weather.trim() : "";
-    const missingPiecesAdvice =
-      typeof body.missingPiecesAdvice === "string"
-        ? body.missingPiecesAdvice.trim()
-        : "";
     const stylingTips = Array.isArray(body.stylingTips)
       ? body.stylingTips.filter((tip: unknown) => typeof tip === "string")
       : [];
@@ -126,6 +121,22 @@ export async function POST(request: Request) {
 
     await connectDB();
 
+    // Verify all itemIds belong to the current authenticated user
+    const userOwnedItemsCount = await WardrobeItem.countDocuments({
+      _id: { $in: validItemIds.map((id: string) => new mongoose.Types.ObjectId(id)) },
+      userId,
+    });
+
+    if (userOwnedItemsCount !== validItemIds.length) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "All items in the outfit must belong to your personal wardrobe.",
+        },
+        { status: 403 }
+      );
+    }
+
     const newOutfit = await SavedOutfit.create({
       userId,
       title,
@@ -135,7 +146,6 @@ export async function POST(request: Request) {
       weather,
       stylingTips,
       itemIds: validItemIds.map((id: string) => new mongoose.Types.ObjectId(id)),
-      missingPiecesAdvice,
     });
 
     return NextResponse.json(
@@ -150,7 +160,6 @@ export async function POST(request: Request) {
           location: newOutfit.location,
           weather: newOutfit.weather,
           stylingTips: newOutfit.stylingTips,
-          missingPiecesAdvice: newOutfit.missingPiecesAdvice,
           createdAt: newOutfit.createdAt,
         },
       },

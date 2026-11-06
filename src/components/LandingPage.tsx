@@ -23,7 +23,7 @@ export const faqs: FaqItem[] = [
   {
     question: "Does Wardrobe AI recommend clothes I don't own?",
     answer:
-      "No! The outfit engine is strictly locked to your personal wardrobe collection. It never fabricates clothes you do not own. On Pro plans, it can additionally suggest an optional 'What to Buy Next' finishing tip (like a woven belt or classic loafers) to complement your look.",
+      "No! The outfit engine is strictly locked to your personal wardrobe collection. It never fabricates clothes you do not own and never suggests external shopping. Every ensemble is styled 100% from your catalogued pieces.",
   },
   {
     question: "How do I add clothes to my digital wardrobe?",
@@ -59,7 +59,7 @@ export const faqs: FaqItem[] = [
   {
     question: "What extra features do I get with Wardrobe Pro?",
     answer:
-      "Wardrobe Pro (₦1,500 / month) unlocks unlimited wardrobe items (up to 300), unlimited daily outfit generations, event styling (Owambe, Weddings, Interviews), priority reasoning via Gemini 3.8 Flash, smart 'What to Buy Next' advice, and unlimited saved looks with outfit wear counters.",
+      "Wardrobe Pro (₦1,500 / month) unlocks unlimited wardrobe items, unlimited daily outfit generations, full-wardrobe styling, special event styling (Owambe, Weddings, Interviews), priority reasoning via Gemini 3.8 Flash, and unlimited saved looks with outfit wear counters.",
   },
   {
     question: "Are my wardrobe photos private?",
@@ -106,9 +106,9 @@ const comparisonTable: ComparisonRow[] = [
     pro: "Priority queue & smartest reasoning (gemini-3.8-flash)",
   },
   {
-    feature: "Missing Pieces Advice",
-    starter: "Basic styling tips only",
-    pro: '"What to Buy Next" smart shopping recommendations',
+    feature: "Wardrobe Scope",
+    starter: "Top 20 active items",
+    pro: "Full wardrobe cataloguing & styling",
   },
   {
     feature: "Saved Outfits",
@@ -341,10 +341,12 @@ export default function LandingPage() {
             {/* Hero Showcase Frame */}
             <div className="mt-14 max-w-5xl mx-auto rounded-3xl bg-white p-3 sm:p-5 shadow-2xl border border-ivory-300">
               <div className="relative rounded-2xl overflow-hidden shadow-inner bg-stone-900 group">
-                <img
+                <Image
                   alt="Wardrobe AI curated outfit showcase for Lagos Island weather and lifestyle"
-                  className="w-full h-auto object-cover max-h-[560px] mx-auto filter saturate-105"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuAOfe3XbHenCa-ZZo8nQO0tJp6m51o7c9UQcOdhboh95mrVwGLo-jQewUXdor0Nmny4Z356U2D2aGvpX8VqvdLUQq6bMH1_T0a_JsFY_ySfe7iTmPSP9bSvz-LVBLyUv9n8R_ICy4mbtMpoGIPhWT0BPXxHICxMdid3_iaXmJIV_2PG74GCdomU2X7F2RKLJ2mTXl7HT1TGlhkN1SY63LZnA6jkwl6mqJv5BL94BeFnWAGy0_rDuq6dMg"
+                  className="w-full h-auto object-cover max-h-140 mx-auto filter saturate-105"
+                  width={1000}
+                  height={1000}
+                  src="/wardrobeai-page.png"
                 />
                 {/* Realtime Context Overlay Bar */}
                 <div className="absolute bottom-4 left-4 right-4 md:left-6 md:right-auto bg-stone-900/80 backdrop-blur-md text-white text-xs sm:text-sm px-4 py-2.5 rounded-xl border border-white/10 flex items-center gap-3">
@@ -558,9 +560,9 @@ export default function LandingPage() {
                   Wear &amp; Track
                 </h3>
                 <p className="text-stone-600 text-sm mb-6 flex-grow">
-                  Get styled outfit flat-lays with styling tips, weather notes,
-                  and &ldquo;What to Buy Next&rdquo; advice. Save favorites with
-                  wear counters.
+                  Get styled outfit flat-lays with tailored styling tips and
+                  climate accommodation notes. Save favorites with wear rotation
+                  counters.
                 </p>
                 <div className="bg-forest text-white text-xs px-3 py-2 rounded-xl text-center font-medium">
                   Complete Blueprint in Seconds
@@ -594,10 +596,12 @@ export default function LandingPage() {
             {/* Dashboard Replica Container */}
             <div className="bg-white rounded-3xl p-4 sm:p-6 shadow-xl border border-ivory-300">
               <div className="rounded-2xl overflow-hidden border border-ivory-300 shadow-sm">
-                <img
+                <Image
                   alt="Wardrobe AI Live Dashboard Interface — daily morning outfit command center with real-time weather"
+                  width={1000}
+                  height={1000}
                   className="w-full h-auto object-cover"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuCrZ0oNPw93bjF9bbp9_4mRcXrMPBaw8g0rNaPE8ayluiDrIVJjo1GFLiwaZOX6XEDBl7artYs_tiSfa9plkWVLjWuQbZLpJm5nkjTcilTG4lTRa6y8bHqCgFRyXNwRijAwm6UgdhunLeolnMlH6Gj78BXIfzNS9kLREwZgJxf6kViNwkTe_hDKtHSmaVLARO6_WhryphlgfJWex55c4FaYCKc28ndLXhIhR3LNNvt3bTcbYdQtY9QCHg"
+                  src="/wardrobeai-homepage.png"
                 />
               </div>
               {/* Feature Annotations under UI */}
@@ -813,14 +817,15 @@ export default function LandingPage() {
               {/* Feature 6 */}
               <div className="p-6 rounded-2xl bg-ivory-100 border border-ivory-300 hover:border-forest/40 transition-colors">
                 <div className="w-10 h-10 rounded-xl bg-forest/10 text-forest flex items-center justify-center font-bold mb-4">
-                  🛍️
+                  🔒
                 </div>
                 <h3 className="font-semibold text-lg text-stone-900 mb-1.5">
-                  &ldquo;What to Buy Next&rdquo; Advice
+                  100% Owned Clothes Only
                 </h3>
                 <p className="text-stone-600 text-sm leading-relaxed">
-                  Identifies gaps in your wardrobe and suggests targeted
-                  finishing pieces to maximize versatility without overspending.
+                  Every recommendation is built strictly from clothes you own.
+                  Zero external shopping links, zero ads, zero pressure to buy
+                  new pieces.
                 </p>
               </div>
               {/* Feature 7 */}
@@ -1128,10 +1133,7 @@ export default function LandingPage() {
                     </li>
                     <li className="flex items-start gap-2.5 text-stone-400">
                       <span className="text-stone-300 font-bold mt-0.5">✕</span>
-                      <span>
-                        &ldquo;What to Buy Next&rdquo; smart shopping
-                        recommendations
-                      </span>
+                      <span>Special event styling (Owambe &amp; Weddings)</span>
                     </li>
                     <li className="flex items-start gap-2.5 text-stone-400">
                       <span className="text-stone-300 font-bold mt-0.5">✕</span>
@@ -1204,8 +1206,8 @@ export default function LandingPage() {
                     <li className="flex items-start gap-2.5">
                       <span className="text-forest font-bold mt-0.5">✓</span>
                       <span>
-                        <strong>&ldquo;What to Buy Next&rdquo;</strong> smart
-                        shopping recommendations
+                        <strong>Full-wardrobe cataloguing</strong> without
+                        active item limits
                       </span>
                     </li>
                     <li className="flex items-start gap-2.5">
@@ -1298,18 +1300,18 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="bg-white p-6 rounded-2xl border border-ivory-300 shadow-sm flex flex-col justify-between">
                 <p className="text-stone-700 text-sm leading-relaxed italic">
-                  &ldquo;I used to wear the same three shirts to work because
-                  morning traffic stress made thinking about clothes painful.
-                  Wardrobe AI found combinations with trousers I hadn&apos;t
-                  worn in 6 months.&rdquo;
+                  &ldquo;I love how Wardrobe AI makes getting dressed less
+                  stressful. Instead of constantly thinking I have nothing to
+                  wear, it helps me discover fresh outfit combinations from
+                  clothes I already own. Such a smart and practical idea!&rdquo;
                 </p>
                 <div className="mt-6 flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-forest text-white font-bold flex items-center justify-center text-xs">
-                    BL
+                    SL
                   </div>
                   <div>
                     <h5 className="text-sm font-semibold text-stone-900">
-                      Boluwatife L.
+                      Shola L.
                     </h5>
                     <span className="text-xs text-stone-500">
                       Ifo, Ogun • Verified Beta

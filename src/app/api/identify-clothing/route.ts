@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { identifyClothing } from "@/lib/ai";
 import { parseAiError } from "@/lib/errors";
 import { trackMetric } from "@/lib/telemetry";
+import { canUploadClothing } from "@/lib/subscription";
 
 export async function POST(request: Request) {
   const reqStartTime = performance.now();
@@ -20,15 +21,52 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = await request.json().catch(() => ({}));
-    const { imageUrl } = body;
+    const uploadCheck = await canUploadClothing(userId);
+    if (!uploadCheck.allowed) {
+      return Response.json(
+        {
+          success: false,
+          limitReached: true,
+          message: uploadCheck.reason,
+          currentCount: uploadCheck.currentCount,
+          limit: uploadCheck.limit,
+        },
+        { status: 403 }
+      );
+    }
 
-    if (!imageUrl || typeof imageUrl !== "string") {
+    const body = await request.json().catch(() => ({}));
+    const rawImageUrl = typeof body.imageUrl === "string" ? body.imageUrl.trim() : "";
+
+    if (!rawImageUrl) {
       return Response.json(
         { success: false, message: "Image URL is required." },
         { status: 400 }
       );
     }
+
+    let parsedUrl: URL;
+    try {
+      parsedUrl = new URL(rawImageUrl);
+    } catch {
+      return Response.json(
+        { success: false, message: "Invalid image URL." },
+        { status: 400 }
+      );
+    }
+
+    // SSRF Defense: Image must originate strictly from secure Cloudinary CDN
+    if (
+      parsedUrl.protocol !== "https:" ||
+      parsedUrl.hostname !== "res.cloudinary.com"
+    ) {
+      return Response.json(
+        { success: false, message: "Image must be hosted on Cloudinary." },
+        { status: 400 }
+      );
+    }
+
+    const imageUrl = parsedUrl.toString();
 
     aiStartTime = performance.now();
     const result = await identifyClothing(imageUrl);

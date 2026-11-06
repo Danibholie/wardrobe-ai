@@ -27,6 +27,11 @@ import {
   Copy,
   Check,
   MapPin,
+  Wallet,
+  CreditCard,
+  DollarSign,
+  ArrowDownRight,
+  BadgeCheck,
 } from "lucide-react";
 import { SocialCanvasCard } from "@/components/admin/SocialCanvasCard";
 
@@ -48,6 +53,9 @@ interface AdminData {
       email: string;
       image?: string;
       role?: string;
+      subscriptionTier?: string;
+      subscriptionStatus?: string;
+      isTrial?: boolean;
       createdAt: string;
       lastActiveAt?: string;
       wardrobeCount: number;
@@ -104,6 +112,29 @@ interface AdminData {
       user: { name?: string; email?: string } | null;
     }>;
   };
+  revenue: {
+    total: number;
+    today: number;
+    thisWeek: number;
+    thisMonth: number;
+    totalTransactions: number;
+    activePaidSubscribers: number;
+    activeTrials: number;
+    starterUsers: number;
+    recentTransactions: Array<{
+      _id: string;
+      txRef: string;
+      flwTransactionId?: string;
+      amount: number;
+      currency: string;
+      status: "pending" | "successful" | "failed";
+      paymentType?: string;
+      customerEmail: string;
+      customerName?: string;
+      paidAt?: string;
+      createdAt: string;
+    }>;
+  };
   trends: Array<{
     date: string;
     label: string;
@@ -111,6 +142,7 @@ interface AdminData {
     clothesAdded: number;
     outfitsGenerated: number;
     outfitsSaved: number;
+    revenue?: number;
   }>;
   storage: {
     available: boolean;
@@ -178,6 +210,7 @@ interface SocialDropData {
 
 type TabKey =
   | "overview"
+  | "revenue"
   | "social"
   | "users"
   | "clothes"
@@ -351,6 +384,17 @@ export default function AdminDashboardPage() {
     clothes: { total: 0, today: 0, thisWeek: 0, avgPerUser: "0", categoryBreakdown: [], colorBreakdown: [], recent: [] },
     outfitsGenerated: { totalRuns: 0, estimatedTotalOutfits: 0, today: 0, thisWeek: 0, avgLatencyMs: 0, occasionBreakdown: [] },
     savedOutfits: { total: 0, today: 0, thisWeek: 0, totalWears: 0, outfitsWithWears: 0, avgWearsPerOutfit: "0", mostWorn: [], recent: [] },
+    revenue: {
+      total: 0,
+      today: 0,
+      thisWeek: 0,
+      thisMonth: 0,
+      totalTransactions: 0,
+      activePaidSubscribers: 0,
+      activeTrials: 0,
+      starterUsers: 0,
+      recentTransactions: [],
+    },
     trends: [],
     storage: { available: false, imageCount: 0, storageHuman: "Available" },
     health: { successRate24h: 100, totalRequests24h: 0, totalFailures24h: 0, recommendationAvgLatencyMs: 0, recommendationMaxLatencyMs: 0, breakdown: {}, recentFailures: [] },
@@ -362,6 +406,7 @@ export default function AdminDashboardPage() {
     clothes,
     outfitsGenerated,
     savedOutfits,
+    revenue,
     trends,
     storage,
     health,
@@ -438,9 +483,49 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* 4 Core KPI Banner Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
-        {/* KPI 1: Total Users */}
+      {/* 5 Core KPI Banner Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-5">
+        {/* KPI 1: Total Revenue */}
+        <div
+          onClick={() => setActiveTab("revenue")}
+          className={`p-5 rounded-2xl border transition-all cursor-pointer shadow-xs ${
+            activeTab === "revenue"
+              ? "bg-ivory-200/90 border-forest ring-1 ring-forest"
+              : "bg-white border-ivory-300 hover:border-stone-400"
+          }`}
+        >
+          <div className="flex items-center justify-between text-stone-500 mb-2">
+            <span className="text-xs font-semibold uppercase tracking-wider">
+              Total Revenue
+            </span>
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center justify-center">
+              <Wallet className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="font-editorial text-3xl sm:text-4xl font-bold text-stone-900 tracking-tight">
+              ₦{revenue.total.toLocaleString()}
+            </span>
+            {revenue.today > 0 && (
+              <span className="text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                +₦{revenue.today.toLocaleString()}
+              </span>
+            )}
+          </div>
+          <div className="mt-3 pt-3 border-t border-ivory-200 text-xs text-stone-500 flex justify-between">
+            <span>
+              Pro: <strong>{revenue.activePaidSubscribers}</strong>
+            </span>
+            <span>
+              Trials: <strong>{revenue.activeTrials}</strong>
+            </span>
+            <span>
+              30d: <strong>₦{revenue.thisMonth.toLocaleString()}</strong>
+            </span>
+          </div>
+        </div>
+
+        {/* KPI 2: Total Users */}
         <div
           onClick={() => setActiveTab("users")}
           className={`p-5 rounded-2xl border transition-all cursor-pointer shadow-xs ${
@@ -478,7 +563,7 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* KPI 2: Total Clothes Added */}
+        {/* KPI 3: Total Clothes Added */}
         <div
           onClick={() => setActiveTab("clothes")}
           className={`p-5 rounded-2xl border transition-all cursor-pointer shadow-xs ${
@@ -513,7 +598,7 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* KPI 3: Total Outfits Generated */}
+        {/* KPI 4: Total Outfits Generated */}
         <div
           onClick={() => setActiveTab("outfits")}
           className={`p-5 rounded-2xl border transition-all cursor-pointer shadow-xs ${
@@ -551,7 +636,7 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* KPI 4: Total Outfits Saved & Wears */}
+        {/* KPI 5: Total Outfits Saved & Wears */}
         <div
           onClick={() => setActiveTab("saved")}
           className={`p-5 rounded-2xl border transition-all cursor-pointer shadow-xs ${
@@ -591,6 +676,11 @@ export default function AdminDashboardPage() {
       <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-ivory-300 scrollbar-none">
         {[
           { key: "overview", label: "Executive Overview", icon: Layers },
+          {
+            key: "revenue",
+            label: `Revenue & Billing (₦${revenue.total.toLocaleString()})`,
+            icon: CreditCard,
+          },
           { key: "social", label: "✨ Daily Social Studio", icon: Share2 },
           { key: "users", label: `Users (${users.total})`, icon: Users },
           {
@@ -632,6 +722,84 @@ export default function AdminDashboardPage() {
       {/* TAB CONTENT: 1. OVERVIEW */}
       {activeTab === "overview" && (
         <div className="space-y-8 animate-in fade-in duration-200">
+          {/* Revenue & Financial Health Pulse */}
+          <div className="bg-gradient-to-br from-forest/5 via-ivory-100 to-ivory-200/60 rounded-2xl p-6 border border-ivory-300 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-ivory-300 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-forest text-white flex items-center justify-center shadow-xs">
+                  <Wallet className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-editorial text-xl font-bold text-stone-900">
+                    Revenue &amp; Monetization Inflow
+                  </h3>
+                  <p className="text-xs text-stone-500">
+                    Gross subscription earnings from Wardrobe Pro (₦1,500/30-day pass)
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setActiveTab("revenue")}
+                className="text-xs font-semibold text-forest hover:underline inline-flex items-center gap-1 cursor-pointer self-start sm:self-auto"
+              >
+                Full Billing Ledger <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+              <div className="p-3.5 rounded-xl bg-white border border-ivory-300 shadow-2xs space-y-0.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
+                  Total Collected
+                </span>
+                <div className="font-editorial text-2xl font-bold text-stone-900">
+                  ₦{revenue.total.toLocaleString()}
+                </div>
+                <p className="text-[10px] text-stone-500">
+                  {revenue.totalTransactions} paid {revenue.totalTransactions === 1 ? "subscription" : "subscriptions"}
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-white border border-ivory-300 shadow-2xs space-y-0.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
+                  Past 30 Days (MRR)
+                </span>
+                <div className="font-editorial text-2xl font-bold text-forest">
+                  ₦{revenue.thisMonth.toLocaleString()}
+                </div>
+                <p className="text-[10px] text-stone-500">
+                  Rolling monthly run rate
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-white border border-ivory-300 shadow-2xs space-y-0.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
+                  Active Pro Users
+                </span>
+                <div className="font-editorial text-2xl font-bold text-emerald-800">
+                  {revenue.activePaidSubscribers}
+                </div>
+                <p className="text-[10px] text-stone-500">
+                  + {revenue.activeTrials} on 3-day trial
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-white border border-ivory-300 shadow-2xs space-y-0.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
+                  Pro Conversion Rate
+                </span>
+                <div className="font-editorial text-2xl font-bold text-amber-700">
+                  {users.total > 0
+                    ? ((revenue.activePaidSubscribers / users.total) * 100).toFixed(1)
+                    : "0.0"}
+                  %
+                </div>
+                <p className="text-[10px] text-stone-500">
+                  Paid vs {users.total} total accounts
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* 7-Day Activity Trends Multi-chart */}
           <div className="bg-white rounded-2xl p-6 border border-ivory-300 shadow-sm space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -810,6 +978,257 @@ export default function AdminDashboardPage() {
                 ))}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB CONTENT: 2. REVENUE & BILLING */}
+      {activeTab === "revenue" && (
+        <div className="space-y-6 animate-in fade-in duration-200">
+          {/* Revenue Header Overview Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="p-5 rounded-2xl bg-white border border-ivory-300 shadow-xs space-y-2">
+              <div className="flex items-center justify-between text-stone-500">
+                <span className="text-xs font-semibold uppercase tracking-wider">
+                  Total Gross Revenue
+                </span>
+                <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center justify-center">
+                  <Wallet className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="font-editorial text-3xl font-bold text-stone-900 tracking-tight">
+                ₦{revenue.total.toLocaleString()}
+              </div>
+              <p className="text-xs text-stone-500">
+                All-time revenue received via Flutterwave
+              </p>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-white border border-ivory-300 shadow-xs space-y-2">
+              <div className="flex items-center justify-between text-stone-500">
+                <span className="text-xs font-semibold uppercase tracking-wider">
+                  30-Day Monthly Run Rate
+                </span>
+                <div className="w-8 h-8 rounded-lg bg-ivory-200 text-forest border border-ivory-300 flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="font-editorial text-3xl font-bold text-forest tracking-tight">
+                ₦{revenue.thisMonth.toLocaleString()}
+              </div>
+              <p className="text-xs text-stone-500">
+                Inflow past 30 days (7d: ₦{revenue.thisWeek.toLocaleString()})
+              </p>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-white border border-ivory-300 shadow-xs space-y-2">
+              <div className="flex items-center justify-between text-stone-500">
+                <span className="text-xs font-semibold uppercase tracking-wider">
+                  Active Pro Subscribers
+                </span>
+                <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center justify-center">
+                  <BadgeCheck className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="font-editorial text-3xl font-bold text-stone-900 tracking-tight">
+                  {revenue.activePaidSubscribers}
+                </span>
+                <span className="text-xs font-medium text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                  Paying ₦1,500/mo
+                </span>
+              </div>
+              <p className="text-xs text-stone-500">
+                Plus <strong>{revenue.activeTrials}</strong> users on active 3-day trial
+              </p>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-white border border-ivory-300 shadow-xs space-y-2">
+              <div className="flex items-center justify-between text-stone-500">
+                <span className="text-xs font-semibold uppercase tracking-wider">
+                  Free Starter Users
+                </span>
+                <div className="w-8 h-8 rounded-lg bg-stone-100 text-stone-600 border border-stone-200 flex items-center justify-center">
+                  <Users className="w-4 h-4" />
+                </div>
+              </div>
+              <div className="flex items-baseline gap-2">
+                <span className="font-editorial text-3xl font-bold text-stone-900 tracking-tight">
+                  {revenue.starterUsers}
+                </span>
+                <span className="text-xs font-medium text-stone-600 bg-stone-100 px-2 py-0.5 rounded-full">
+                  Free Tier
+                </span>
+              </div>
+              <p className="text-xs text-stone-500">
+                20 items cap &amp; 1 AI outfit generation/day
+              </p>
+            </div>
+          </div>
+
+          {/* Pricing Model & Tier Benefits Summary */}
+          <div className="bg-white rounded-2xl p-6 border border-ivory-300 shadow-sm space-y-4">
+            <div className="border-b border-ivory-200 pb-3">
+              <h3 className="font-editorial text-xl font-bold text-stone-900">
+                Configured Monetization &amp; Pricing Architecture
+              </h3>
+              <p className="text-xs text-stone-500 mt-0.5">
+                Current active product tiers, entitlement limits, and billing cycles.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Starter Tier */}
+              <div className="p-4 rounded-xl bg-ivory-100/60 border border-ivory-300 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-stone-200 text-stone-800">
+                    Starter Wardrobe
+                  </span>
+                  <span className="font-editorial text-2xl font-bold text-stone-900">
+                    ₦0 <span className="text-xs font-normal text-stone-500">/ forever</span>
+                  </span>
+                </div>
+                <ul className="text-xs text-stone-700 space-y-1.5">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-stone-500 shrink-0" />
+                    <span>Up to <strong>20 clothing items</strong> cataloged</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-stone-500 shrink-0" />
+                    <span><strong>1 AI outfit recommendation</strong> per day (atomic daily reset)</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-stone-500 shrink-0" />
+                    <span>Active 20-item rotation window for oversized closets</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-stone-500 shrink-0" />
+                    <span>Weather-based smart styling &amp; wear counter</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Pro Tier */}
+              <div className="p-4 rounded-xl bg-forest/5 border border-forest/30 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-forest text-white">
+                    Wardrobe Pro
+                  </span>
+                  <span className="font-editorial text-2xl font-bold text-forest">
+                    ₦1,500 <span className="text-xs font-normal text-stone-500">/ 30-day pass</span>
+                  </span>
+                </div>
+                <ul className="text-xs text-stone-700 space-y-1.5">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-forest shrink-0" />
+                    <span><strong>Unlimited</strong> clothing items &amp; full closet catalog</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-forest shrink-0" />
+                    <span><strong>Unlimited daily AI outfit generations</strong></span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-forest shrink-0" />
+                    <span><strong>3-day automatic trial</strong> for all newly registered users</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-forest shrink-0" />
+                    <span>Hosted Flutterwave checkout with instant webhook synchronization</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Transactions Ledger Table */}
+          <div className="bg-white rounded-2xl p-6 border border-ivory-300 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-ivory-200 pb-4">
+              <div>
+                <h3 className="font-editorial text-xl font-bold text-stone-900 flex items-center gap-2">
+                  <CreditCard className="w-4 h-4 text-forest" />
+                  Live Transactions Ledger
+                </h3>
+                <p className="text-xs text-stone-500">
+                  Recent payment attempts, subscription purchases, and webhook confirmations.
+                </p>
+              </div>
+              <div className="text-xs font-semibold text-stone-600 bg-ivory-100 px-3 py-1.5 rounded-xl border border-ivory-300">
+                Total Transactions: {revenue.totalTransactions}
+              </div>
+            </div>
+
+            {revenue.recentTransactions.length === 0 ? (
+              <div className="p-8 text-center bg-ivory-100/50 rounded-xl border border-ivory-200">
+                <Wallet className="w-8 h-8 text-stone-400 mx-auto mb-2" />
+                <p className="text-sm font-semibold text-stone-800">
+                  No payment transactions recorded yet.
+                </p>
+                <p className="text-xs text-stone-500 mt-1 max-w-sm mx-auto">
+                  When members upgrade to Wardrobe Pro via Flutterwave, real-time transaction ledgers will show here automatically.
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs text-stone-700">
+                  <thead className="bg-ivory-100 text-stone-600 font-semibold uppercase tracking-wider text-[10px] border-b border-ivory-300">
+                    <tr>
+                      <th className="px-4 py-3">Customer</th>
+                      <th className="px-4 py-3">Amount</th>
+                      <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3">Channel</th>
+                      <th className="px-4 py-3">Reference</th>
+                      <th className="px-4 py-3">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-ivory-200">
+                    {revenue.recentTransactions.map((tx) => (
+                      <tr key={tx._id} className="hover:bg-ivory-50 transition-colors">
+                        <td className="px-4 py-3.5">
+                          <p className="font-semibold text-stone-900">
+                            {tx.customerName || "Member"}
+                          </p>
+                          <p className="text-[11px] text-stone-500">
+                            {tx.customerEmail}
+                          </p>
+                        </td>
+                        <td className="px-4 py-3.5 font-bold text-stone-900">
+                          ₦{tx.amount.toLocaleString()} {tx.currency}
+                        </td>
+                        <td className="px-4 py-3.5">
+                          {tx.status === "successful" ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                              Successful
+                            </span>
+                          ) : tx.status === "pending" ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                              <Clock className="w-3 h-3 text-amber-600" />
+                              Pending
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-50 text-rose-800 border border-rose-200">
+                              <AlertTriangle className="w-3 h-3 text-rose-600" />
+                              Failed
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3.5 capitalize text-stone-600">
+                          {tx.paymentType || "Card / Bank"}
+                        </td>
+                        <td className="px-4 py-3.5 font-mono text-[11px] text-stone-500">
+                          <span title={tx.txRef}>
+                            {tx.txRef.length > 20 ? `${tx.txRef.slice(0, 18)}...` : tx.txRef}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3.5 text-stone-500" suppressHydrationWarning>
+                          {new Date(tx.createdAt).toLocaleDateString()} {new Date(tx.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -1083,6 +1502,7 @@ export default function AdminDashboardPage() {
                 <thead className="bg-ivory-100 text-stone-600 font-semibold uppercase tracking-wider text-[10px] border-b border-ivory-300">
                   <tr>
                     <th className="px-4 py-3">User</th>
+                    <th className="px-4 py-3">Plan</th>
                     <th className="px-4 py-3">Role</th>
                     <th className="px-4 py-3">Wardrobe Size</th>
                     <th className="px-4 py-3">Joined Date</th>
@@ -1115,6 +1535,23 @@ export default function AdminDashboardPage() {
                             {user.email}
                           </p>
                         </div>
+                      </td>
+                      <td className="px-4 py-3.5">
+                        {user.subscriptionTier === "pro" ? (
+                          user.isTrial ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                              Pro Trial (3d)
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                              Pro (₦1,500)
+                            </span>
+                          )
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-stone-100 text-stone-600">
+                            Starter Free
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3.5">
                         <span

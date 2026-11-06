@@ -166,7 +166,7 @@ export default function TermsOfServicePage() {
                   <li className="flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-gold-400" /> Unlimited wardrobe items (up to 300 cap)</li>
                   <li className="flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-gold-400" /> Unlimited daily outfit generations</li>
                   <li className="flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-gold-400" /> Event styling (Owambe, Weddings, Dates)</li>
-                  <li className="flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-gold-400" /> Smart &ldquo;What to Buy Next&rdquo; advice</li>
+                  <li className="flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-gold-400" /> Priority AI reasoning (Gemini 3.8 Flash)</li>
                   <li className="flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-gold-400" /> Unlimited saved looks &amp; wear counter</li>
                 </ul>
               </div>

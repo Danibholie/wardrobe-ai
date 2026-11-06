@@ -37,7 +37,6 @@ type SavedOutfit = {
   location?: string;
   weather?: string;
   stylingTips: string[];
-  missingPiecesAdvice?: string;
   wearCount?: number;
   lastWorn?: string | null;
   createdAt: string;

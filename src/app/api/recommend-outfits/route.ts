@@ -5,11 +5,17 @@ import WardrobeItem from "@/models/WardrobeItem";
 import { recommendOutfits, WardrobeItemSummary } from "@/lib/ai";
 import { parseAiError } from "@/lib/errors";
 import { trackMetric } from "@/lib/telemetry";
+import {
+  tryConsumeDailyGeneration,
+  refundDailyGeneration,
+  STARTER_ACTIVE_WARDROBE_WINDOW,
+} from "@/lib/subscription";
 
 export async function POST(request: Request) {
   const reqStartTime = performance.now();
   let aiStartTime = 0;
   let currentUserId: string | undefined;
+  let quotaClaimed = false;
 
   try {
     const session = await auth();
@@ -24,6 +30,24 @@ export async function POST(request: Request) {
         },
         { status: 401 },
       );
+    }
+
+    // Atomically claim today's generation quota to prevent race condition bypass
+    const genCheck = await tryConsumeDailyGeneration(userId);
+    if (!genCheck.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          limitReached: true,
+          message: genCheck.reason,
+          countToday: genCheck.countToday,
+          limit: genCheck.limit,
+        },
+        { status: 403 },
+      );
+    }
+    if (!genCheck.isPro) {
+      quotaClaimed = true;
     }
 
     const body = await request.json().catch(() => ({}));
@@ -115,7 +139,25 @@ export async function POST(request: Request) {
       );
     }
 
-    const wardrobeSummaries: WardrobeItemSummary[] = userItems.map((item) => ({
+    const isPro = genCheck.isPro;
+    const isWardrobeCapped =
+      !isPro && userItems.length > STARTER_ACTIVE_WARDROBE_WINDOW;
+
+    // Apply Active Wardrobe Window for Starter users (Top 20 active items)
+    let itemsToStyle = userItems;
+    if (!isPro) {
+      if (anchorItemId) {
+        const anchor = userItems.find((it) => it._id.toString() === anchorItemId);
+        const rest = userItems.filter((it) => it._id.toString() !== anchorItemId);
+        itemsToStyle = anchor
+          ? [anchor, ...rest.slice(0, STARTER_ACTIVE_WARDROBE_WINDOW - 1)]
+          : userItems.slice(0, STARTER_ACTIVE_WARDROBE_WINDOW);
+      } else {
+        itemsToStyle = userItems.slice(0, STARTER_ACTIVE_WARDROBE_WINDOW);
+      }
+    }
+
+    const wardrobeSummaries: WardrobeItemSummary[] = itemsToStyle.map((item) => ({
       id: item._id.toString(),
       name: item.name,
       category: item.category,
@@ -179,6 +221,8 @@ export async function POST(request: Request) {
         outfitsReturned: enrichedOutfits.length,
         hasAnchorItem: Boolean(anchorItemId),
         occasion,
+        isPro,
+        isWardrobeCapped,
       },
     });
 
@@ -186,6 +230,9 @@ export async function POST(request: Request) {
       success: true,
       outfits: enrichedOutfits,
       totalWardrobeCount: userItems.length,
+      activeItemCount: itemsToStyle.length,
+      isWardrobeCapped,
+      isPro,
       criteria: {
         location,
         weather,
@@ -196,6 +243,13 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
+    // If quota was claimed but generation failed unexpectedly, refund it
+    if (quotaClaimed && currentUserId) {
+      void refundDailyGeneration(currentUserId).catch((refundErr) => {
+        console.error("Failed to refund daily generation quota:", refundErr);
+      });
+    }
+
     const errorDuration = aiStartTime > 0 ? performance.now() - aiStartTime : performance.now() - reqStartTime;
     console.error("Outfit recommendation error:", error);
 

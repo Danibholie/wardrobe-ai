@@ -22,8 +22,11 @@ import {
   Zap,
   ZapOff,
   AlertTriangle,
+  Crown,
 } from "lucide-react";
 import { formatAiError } from "@/lib/errors";
+import { useSubscription } from "@/hooks/useSubscription";
+import { PricingModal } from "@/components/PricingModal";
 
 type ClothingDetails = {
   name: string;
@@ -94,6 +97,9 @@ export default function AddClothingPage() {
     detectedObject: string;
     reason: string;
   } | null>(null);
+
+  const { subscription } = useSubscription();
+  const [pricingOpen, setPricingOpen] = useState(false);
 
   // Camera and file selection state
   const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -369,6 +375,9 @@ export default function AddClothingPage() {
       const uploadData = await uploadResponse.json();
 
       if (!uploadResponse.ok || !uploadData.success || !uploadData.imageUrl) {
+        if (uploadData.limitReached) {
+          setPricingOpen(true);
+        }
         throw new Error(uploadData.message || "Photo upload failed.");
       }
 
@@ -493,6 +502,9 @@ export default function AddClothingPage() {
       const data = await response.json();
 
       if (!response.ok || !data.success) {
+        if (data.limitReached) {
+          setPricingOpen(true);
+        }
         throw new Error(data.message || "Could not save this item.");
       }
 
@@ -756,6 +768,29 @@ export default function AddClothingPage() {
               <span>Back to wardrobe</span>
             </Link>
           </div>
+
+          {/* Starter Wardrobe Limit Banner */}
+          {subscription && !subscription.canUploadMore && (
+            <div className="mb-6 p-4 rounded-2xl bg-secondary-container/40 border border-secondary/25 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-on-secondary-container shadow-xs">
+              <div className="flex items-center gap-2.5">
+                <Crown className="w-5 h-5 text-secondary shrink-0" />
+                <div>
+                  <strong className="block text-sm text-on-surface">
+                    Starter Wardrobe Limit Reached ({subscription.itemCount}/{subscription.maxItems} items)
+                  </strong>
+                  <span>Upgrade to Wardrobe Pro to unlock unlimited clothing cataloguing and styling.</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPricingOpen(true)}
+                className="px-4 py-2 rounded-xl bg-primary text-on-primary font-bold hover:bg-primary/95 transition-all text-xs flex items-center gap-1.5 cursor-pointer shadow-xs shrink-0"
+              >
+                <Zap className="w-3.5 h-3.5" />
+                <span>Upgrade to Pro — ₦1,500</span>
+              </button>
+            </div>
+          )}
 
           {/* Top Editorial Header & Status */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-space-sm mb-space-lg">
@@ -1448,6 +1483,13 @@ export default function AddClothingPage() {
           </div>
         </div>
       </div>
+
+      <PricingModal
+        isOpen={pricingOpen}
+        onClose={() => setPricingOpen(false)}
+        subscription={subscription}
+        highlightReason="Upgrade to Wardrobe Pro to add unlimited clothing to your archive."
+      />
     </main>
   );
 }

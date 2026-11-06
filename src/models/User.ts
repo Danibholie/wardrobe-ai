@@ -5,6 +5,15 @@ export interface IUser extends Document {
   email: string;
   image?: string;
   role?: "user" | "admin";
+  subscriptionTier?: "starter" | "pro";
+  subscriptionStatus?: "active" | "expired";
+  subscriptionExpiresAt?: Date;
+  isTrial?: boolean;
+  dailyGenerations?: {
+    count: number;
+    date: string;
+  };
+  flwCustomerId?: string;
   lastActiveAt?: Date;
   location?: {
     city?: string;
@@ -43,6 +52,42 @@ const UserSchema = new Schema<IUser>(
       type: String,
       enum: ["user", "admin"],
       default: "user",
+    },
+
+    subscriptionTier: {
+      type: String,
+      enum: ["starter", "pro"],
+      default: "starter",
+    },
+
+    subscriptionStatus: {
+      type: String,
+      enum: ["active", "expired"],
+      default: "active",
+    },
+
+    subscriptionExpiresAt: {
+      type: Date,
+    },
+
+    isTrial: {
+      type: Boolean,
+      default: false,
+    },
+
+    dailyGenerations: {
+      count: {
+        type: Number,
+        default: 0,
+      },
+      date: {
+        type: String,
+        default: () => new Date().toISOString().split("T")[0],
+      },
+    },
+
+    flwCustomerId: {
+      type: String,
     },
 
     lastActiveAt: {

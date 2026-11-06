@@ -6,6 +6,7 @@ import User from "@/models/User";
 import WardrobeItem from "@/models/WardrobeItem";
 import SavedOutfit from "@/models/SavedOutfit";
 import SystemMetric from "@/models/SystemMetric";
+import PaymentTransaction from "@/models/PaymentTransaction";
 
 export const dynamic = "force-dynamic";
 
@@ -83,8 +84,18 @@ export async function GET() {
       trendClothesRes,
       trendAiRes,
       trendSavedRes,
+      trendRevenueRes,
       metrics24hRes,
       recentFailuresRes,
+      // Revenue & Subscriptions
+      totalRevenueRes,
+      revenueTodayRes,
+      revenue7dRes,
+      revenue30dRes,
+      paidSubscribersRes,
+      trialUsersRes,
+      starterUsersRes,
+      recentTxRes,
     ] = await Promise.allSettled([
       // Users
       User.countDocuments(),
@@ -96,7 +107,7 @@ export async function GET() {
       User.find()
         .sort({ createdAt: -1 })
         .limit(10)
-        .select("name email image role createdAt lastActiveAt location")
+        .select("name email image role createdAt lastActiveAt location subscriptionTier subscriptionStatus isTrial")
         .lean(),
 
       // Wardrobe Items
@@ -226,6 +237,16 @@ export async function GET() {
         },
         { $sort: { _id: 1 } },
       ]),
+      PaymentTransaction.aggregate([
+        { $match: { status: "successful", createdAt: { $gte: sevenDaysAgo } } },
+        {
+          $group: {
+            _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+            count: { $sum: "$amount" },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ]),
 
       // 24h Telemetry
       SystemMetric.aggregate([
@@ -246,6 +267,42 @@ export async function GET() {
         .sort({ createdAt: -1 })
         .limit(10)
         .select("type endpoint durationMs statusCode errorCode errorMessage createdAt")
+        .lean(),
+
+      // Financial Metrics & Subscriptions
+      PaymentTransaction.aggregate([
+        { $match: { status: "successful" } },
+        { $group: { _id: null, totalRevenue: { $sum: "$amount" }, count: { $sum: 1 } } },
+      ]),
+      PaymentTransaction.aggregate([
+        { $match: { status: "successful", createdAt: { $gte: startOfToday } } },
+        { $group: { _id: null, revenueToday: { $sum: "$amount" } } },
+      ]),
+      PaymentTransaction.aggregate([
+        { $match: { status: "successful", createdAt: { $gte: sevenDaysAgo } } },
+        { $group: { _id: null, revenue7d: { $sum: "$amount" } } },
+      ]),
+      PaymentTransaction.aggregate([
+        { $match: { status: "successful", createdAt: { $gte: thirtyDaysAgo } } },
+        { $group: { _id: null, revenue30d: { $sum: "$amount" } } },
+      ]),
+      User.countDocuments({
+        subscriptionTier: "pro",
+        subscriptionStatus: "active",
+        isTrial: { $ne: true },
+      }),
+      User.countDocuments({
+        subscriptionTier: "pro",
+        subscriptionStatus: "active",
+        isTrial: true,
+      }),
+      User.countDocuments({
+        subscriptionTier: "starter",
+      }),
+      PaymentTransaction.find()
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .select("txRef flwTransactionId amount currency status paymentType customerEmail customerName paidAt createdAt")
         .lean(),
     ]);
 
@@ -282,9 +339,56 @@ export async function GET() {
     const trendClothes = trendClothesRes.status === "fulfilled" ? trendClothesRes.value : [];
     const trendGenerations = trendAiRes.status === "fulfilled" ? trendAiRes.value : [];
     const trendSaved = trendSavedRes.status === "fulfilled" ? trendSavedRes.value : [];
+    const trendRevenue = trendRevenueRes.status === "fulfilled" ? (trendRevenueRes.value as Array<{ _id?: string; count?: number }>) : [];
 
     const metrics24h = metrics24hRes.status === "fulfilled" ? metrics24hRes.value : [];
     const recentFailures = recentFailuresRes.status === "fulfilled" ? recentFailuresRes.value : [];
+
+    // Financial metrics extractions
+    const totalRevAgg = totalRevenueRes.status === "fulfilled" ? (totalRevenueRes.value as Array<{ totalRevenue?: number; count?: number }>) : [];
+    const totalRevenue = totalRevAgg[0]?.totalRevenue || 0;
+    const totalTransactions = totalRevAgg[0]?.count || 0;
+
+    const revTodayAgg = revenueTodayRes.status === "fulfilled" ? (revenueTodayRes.value as Array<{ revenueToday?: number }>) : [];
+    const revenueToday = revTodayAgg[0]?.revenueToday || 0;
+
+    const rev7dAgg = revenue7dRes.status === "fulfilled" ? (revenue7dRes.value as Array<{ revenue7d?: number }>) : [];
+    const revenue7d = rev7dAgg[0]?.revenue7d || 0;
+
+    const rev30dAgg = revenue30dRes.status === "fulfilled" ? (revenue30dRes.value as Array<{ revenue30d?: number }>) : [];
+    const revenue30d = rev30dAgg[0]?.revenue30d || 0;
+
+    const activePaidSubscribers = paidSubscribersRes.status === "fulfilled" ? paidSubscribersRes.value : 0;
+    const activeTrials = trialUsersRes.status === "fulfilled" ? trialUsersRes.value : 0;
+    const starterUsers = starterUsersRes.status === "fulfilled" ? starterUsersRes.value : 0;
+
+    const recentTransactionsRaw = recentTxRes.status === "fulfilled" ? (recentTxRes.value as Array<{
+      _id: unknown;
+      txRef: string;
+      flwTransactionId?: string;
+      amount?: number;
+      currency?: string;
+      status: "pending" | "successful" | "failed";
+      paymentType?: string;
+      customerEmail: string;
+      customerName?: string;
+      paidAt?: Date;
+      createdAt?: Date;
+    }>) : [];
+
+    const recentTransactions = recentTransactionsRaw.map((tx) => ({
+      _id: String(tx._id),
+      txRef: tx.txRef,
+      flwTransactionId: tx.flwTransactionId || "",
+      amount: tx.amount || 0,
+      currency: tx.currency || "NGN",
+      status: tx.status,
+      paymentType: tx.paymentType || "Card / Bank",
+      customerEmail: tx.customerEmail,
+      customerName: tx.customerName || "",
+      paidAt: tx.paidAt ? new Date(tx.paidAt).toISOString() : undefined,
+      createdAt: tx.createdAt ? new Date(tx.createdAt).toISOString() : new Date().toISOString(),
+    }));
 
     // Optional user wardrobe count lookup (non-blocking)
     const recentUsers = recentUsersRaw.map((u) => ({
@@ -351,6 +455,7 @@ export async function GET() {
       clothesAdded: number;
       outfitsGenerated: number;
       outfitsSaved: number;
+      revenue: number;
     }> = [];
 
     for (let i = 6; i >= 0; i--) {
@@ -362,6 +467,7 @@ export async function GET() {
       const cMatch = trendClothes.find((x: { _id?: string; count?: number }) => x._id === dateStr)?.count || 0;
       const gMatch = trendGenerations.find((x: { _id?: string; count?: number }) => x._id === dateStr)?.count || 0;
       const sMatch = trendSaved.find((x: { _id?: string; count?: number }) => x._id === dateStr)?.count || 0;
+      const rMatch = trendRevenue.find((x: { _id?: string; count?: number }) => x._id === dateStr)?.count || 0;
 
       dailyTrends.push({
         date: dateStr,
@@ -370,6 +476,7 @@ export async function GET() {
         clothesAdded: cMatch,
         outfitsGenerated: gMatch,
         outfitsSaved: sMatch,
+        revenue: rMatch,
       });
     }
 
@@ -491,6 +598,17 @@ export async function GET() {
             : "0",
         mostWorn: mostWornOutfits,
         recent: recentSavedOutfits,
+      },
+      revenue: {
+        total: totalRevenue,
+        today: revenueToday,
+        thisWeek: revenue7d,
+        thisMonth: revenue30d,
+        totalTransactions,
+        activePaidSubscribers,
+        activeTrials,
+        starterUsers,
+        recentTransactions,
       },
       trends: dailyTrends,
       storage: storageInfo,

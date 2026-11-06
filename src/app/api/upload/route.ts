@@ -1,6 +1,19 @@
 import { v2 as cloudinary } from "cloudinary";
 import { auth } from "@/auth";
 import { trackMetric } from "@/lib/telemetry";
+import { canUploadClothing } from "@/lib/subscription";
+import { connectDB } from "@/lib/db";
+import WardrobeItem from "@/models/WardrobeItem";
+
+const MAX_FILE_SIZE = 12 * 1024 * 1024; // 12MB limit
+const ALLOWED_MIME_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+  "image/avif",
+];
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -28,6 +41,20 @@ export async function POST(request: Request) {
       );
     }
 
+    const uploadCheck = await canUploadClothing(userId);
+    if (!uploadCheck.allowed) {
+      return Response.json(
+        {
+          success: false,
+          limitReached: true,
+          message: uploadCheck.reason,
+          currentCount: uploadCheck.currentCount,
+          limit: uploadCheck.limit,
+        },
+        { status: 403 }
+      );
+    }
+
     const formData = await request.formData();
 
     const file = formData.get("file");
@@ -37,6 +64,26 @@ export async function POST(request: Request) {
         {
           success: false,
           message: "No file provided",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      return Response.json(
+        {
+          success: false,
+          message: "File exceeds 12MB size limit. Please upload a smaller photo.",
+        },
+        { status: 400 }
+      );
+    }
+
+    if (!ALLOWED_MIME_TYPES.includes(file.type.toLowerCase())) {
+      return Response.json(
+        {
+          success: false,
+          message: "Invalid image format. Supported formats: JPG, PNG, WEBP, HEIC.",
         },
         { status: 400 }
       );
@@ -52,7 +99,7 @@ export async function POST(request: Request) {
     }>((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
-          folder: "wardrobe-ai",
+          folder: `wardrobe-ai/${userId}`,
           resource_type: "image",
         },
         (error, result) => {
@@ -134,17 +181,38 @@ export async function DELETE(request: Request) {
       );
     }
 
-    const { publicId } = await request.json();
+    const { publicId } = await request.json().catch(() => ({}));
 
-    if (publicId && typeof publicId === "string") {
-      await cloudinary.uploader.destroy(publicId);
-      return Response.json({ success: true, message: "Image removed from storage." });
+    if (!publicId || typeof publicId !== "string") {
+      return Response.json(
+        { success: false, message: "Missing or invalid publicId" },
+        { status: 400 }
+      );
     }
 
-    return Response.json(
-      { success: false, message: "Missing publicId" },
-      { status: 400 }
-    );
+    // IDOR Protection: Verify publicId is in user's namespace or belongs to user's wardrobe item
+    const isUserNamespace =
+      publicId.startsWith(`wardrobe-ai/${userId}/`) ||
+      publicId === `wardrobe-ai/${userId}`;
+
+    if (!isUserNamespace) {
+      await connectDB();
+      const escapedPublicId = publicId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const ownsItem = await WardrobeItem.exists({
+        userId,
+        imageUrl: { $regex: escapedPublicId },
+      });
+
+      if (!ownsItem) {
+        return Response.json(
+          { success: false, message: "Unauthorized. You cannot delete this media asset." },
+          { status: 403 }
+        );
+      }
+    }
+
+    await cloudinary.uploader.destroy(publicId);
+    return Response.json({ success: true, message: "Image removed from storage." });
   } catch (error) {
     console.error("Cloudinary delete error:", error);
     return Response.json(

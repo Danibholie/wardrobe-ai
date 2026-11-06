@@ -20,9 +20,13 @@ import {
   Compass,
   Calendar as CalendarIcon,
   MapPin,
+  Crown,
+  Zap,
 } from "lucide-react";
 import { formatAiError } from "@/lib/errors";
 import { useLocationWeather, detectLocationAndWeather } from "@/hooks/useLocationWeather";
+import { useSubscription } from "@/hooks/useSubscription";
+import { PricingModal } from "@/components/PricingModal";
 
 type WardrobeItem = {
   id: string;
@@ -41,7 +45,6 @@ type CuratedOutfit = {
   weatherSuitability: string;
   stylingTips: string[];
   itemIds: string[];
-  missingPiecesAdvice?: string;
   items: WardrobeItem[];
 };
 
@@ -157,6 +160,12 @@ export default function PlanPage() {
   const [savingIndex, setSavingIndex] = useState<number | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  const { subscription, refreshSubscription } = useSubscription();
+  const [pricingOpen, setPricingOpen] = useState(false);
+  const [limitReached, setLimitReached] = useState(false);
+  const [isWardrobeCapped, setIsWardrobeCapped] = useState(false);
+  const [totalWardrobeCount, setTotalWardrobeCount] = useState<number>(0);
+
   // Auto-detected location & weather
   const {
     fullLocation: autoLocation,
@@ -260,6 +269,7 @@ export default function PlanPage() {
 
   async function fetchRecommendations() {
     setError(null);
+    setLimitReached(false);
     setSubmitting(true);
 
     try {
@@ -281,12 +291,18 @@ export default function PlanPage() {
       const data = await response.json();
 
       if (!response.ok || !data.success) {
+        if (data.limitReached) {
+          setLimitReached(true);
+        }
         throw new Error(data.message || "Failed to curate an outfit.");
       }
 
       setOutfits(data.outfits || []);
+      setIsWardrobeCapped(Boolean(data.isWardrobeCapped));
+      setTotalWardrobeCount(data.totalWardrobeCount || 0);
       setActiveOutfitIndex(0);
       setSavedOutfits({});
+      refreshSubscription();
 
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
@@ -326,7 +342,6 @@ export default function PlanPage() {
           weather,
           stylingTips: currentOutfit.stylingTips,
           itemIds: currentOutfit.items.map((i) => i.id),
-          missingPiecesAdvice: currentOutfit.missingPiecesAdvice,
         }),
       });
 
@@ -398,6 +413,25 @@ export default function PlanPage() {
                     {location} · {weather} | {occasion}
                     {outing ? ` (${outing})` : ""} · {planDate} {timeOfDay} / {style}
                   </p>
+
+                  {/* Active Wardrobe Window Notice for Starter */}
+                  {isWardrobeCapped && (
+                    <div className="mt-2 p-3 rounded-xl bg-surface-container-high border border-outline-variant/30 flex items-center justify-between text-xs text-on-surface-variant">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-secondary shrink-0" />
+                        <span>
+                          Styled using your <strong>20 active items</strong>. Upgrade to Pro to style across all {totalWardrobeCount} items in your closet.
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setPricingOpen(true)}
+                        className="text-primary font-bold hover:underline shrink-0 ml-2 cursor-pointer"
+                      >
+                        Unlock All →
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Option Switch Pills if multiple looks generated */}
@@ -505,18 +539,6 @@ export default function PlanPage() {
                             </li>
                           ))}
                         </ul>
-                      </div>
-                    )}
-
-                    {/* Missing Piece Finisher if suggested */}
-                    {currentOutfit.missingPiecesAdvice && (
-                      <div className="bg-secondary/10 rounded-lg p-space-md border border-secondary/20">
-                        <span className="font-label-caps text-label-caps text-[#835336] font-bold uppercase tracking-wider block mb-1">
-                          Finishing Touch (Not in wardrobe)
-                        </span>
-                        <p className="font-body-sm text-body-sm text-[#835336]">
-                          {currentOutfit.missingPiecesAdvice}
-                        </p>
                       </div>
                     )}
                   </div>
@@ -904,7 +926,25 @@ export default function PlanPage() {
                     />
                   </div>
 
-                  {error && (
+                  {limitReached ? (
+                    <div
+                      role="alert"
+                      className="p-4 rounded-xl bg-secondary-container/40 border border-secondary/25 text-xs text-on-secondary-container flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs"
+                    >
+                      <div className="flex items-start gap-2.5">
+                        <Zap className="w-4 h-4 shrink-0 text-secondary mt-0.5" />
+                        <span>{error}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setPricingOpen(true)}
+                        className="px-3.5 py-1.5 rounded-lg bg-primary text-on-primary font-bold hover:bg-primary/95 transition-all text-xs flex items-center gap-1.5 cursor-pointer shrink-0 shadow-xs"
+                      >
+                        <Crown className="w-3.5 h-3.5" />
+                        <span>Upgrade to Pro — ₦1,500</span>
+                      </button>
+                    </div>
+                  ) : error ? (
                     <div
                       role="alert"
                       className="p-3.5 rounded-xl bg-red-50/90 border border-red-200 text-xs text-red-800 flex items-start gap-2.5 leading-relaxed shadow-2xs"
@@ -912,7 +952,7 @@ export default function PlanPage() {
                       <AlertCircle className="w-4 h-4 shrink-0 text-red-600 mt-0.5" />
                       <span className="flex-1">{error}</span>
                     </div>
-                  )}
+                  ) : null}
 
                   {/* 6. Action Button */}
                   <div className="pt-space-xs flex flex-col items-center gap-space-xs">
@@ -944,6 +984,13 @@ export default function PlanPage() {
           )}
         </div>
       </div>
+
+      <PricingModal
+        isOpen={pricingOpen}
+        onClose={() => setPricingOpen(false)}
+        subscription={subscription}
+        highlightReason="Upgrade to Wardrobe Pro for unlimited daily outfit recommendations and full-wardrobe styling."
+      />
     </main>
   );
 }

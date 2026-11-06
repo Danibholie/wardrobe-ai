@@ -1,10 +1,13 @@
+const BASE_URL =
+  process.env.NEXT_PUBLIC_APP_URL || "https://www.wardrobeai.com.ng";
+
 export const SITE_CONFIG = {
   name: "Wardrobe AI",
   shortName: "Wardrobe AI",
-  domain: "wardrobeai.com.ng",
-  url: "https://wardrobeai.com.ng",
-  ogImage: "https://wardrobeai.com.ng/og-image.png",
-  logo: "https://wardrobeai.com.ng/wardrobe-ai-logo.webp",
+  domain: "www.wardrobeai.com.ng",
+  url: BASE_URL,
+  ogImage: `${BASE_URL}/og-image.png`,
+  logo: `${BASE_URL}/wardrobe-ai-logo.webp`,
   title: "Wardrobe AI — Smart Outfit Planner & AI Stylist in Nigeria",
   tagline: "Your Wardrobe. Your Weather. Your Day.",
   description:
@@ -13,9 +16,9 @@ export const SITE_CONFIG = {
     "Wardrobe AI",
     "AI Stylist Nigeria",
     "Lagos Outfit Planner",
-    "Digital Wardrobe App",
+    "Digital Wardrobe App Nigeria",
     "Capsule Wardrobe Nigeria",
-    "What to Wear Lagos",
+    "What to Wear in Lagos",
     "Nigerian Fashion AI",
     "Owambe Outfit Planner",
     "Senator Wear Styling",
@@ -24,17 +27,21 @@ export const SITE_CONFIG = {
     "Closet Organizer Nigeria",
     "Smart Dressing Assistant",
     "Daily Outfit Recommendations",
-    "Outfit Recommendations",
     "Personal Stylist Lagos",
     "Sustainable Fashion Nigeria",
+    "Virtual Closet Nigeria",
+    "Outfit Generator from My Clothes",
+    "Wardrobe Management App",
+    "Nigerian Men Style Guide",
+    "Nigerian Women Style Guide",
   ],
   author: {
     name: "Wardrobe AI",
-    url: "https://wardrobeai.com.ng",
+    url: BASE_URL,
   },
   company: {
     name: "LBD Digital Hub",
-    url: "https://wardrobeai.com.ng",
+    url: BASE_URL,
   },
   social: {
     twitter: "https://twitter.com/WardrobeAI",

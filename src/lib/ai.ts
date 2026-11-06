@@ -216,7 +216,6 @@ export type GeneratedOutfit = {
   weatherSuitability: string;
   stylingTips: string[];
   itemIds: string[];
-  missingPiecesAdvice?: string;
 };
 
 const recommendationSchema = {
@@ -260,11 +259,6 @@ const recommendationSchema = {
             items: { type: Type.STRING },
             description:
               "The exact string IDs of items selected from the user's wardrobe collection.",
-          },
-          missingPiecesAdvice: {
-            type: Type.STRING,
-            description:
-              "Optional suggestion for any finishing piece not in their closet (e.g. 'Add a woven leather belt or polarized shades').",
           },
         },
         required: [
@@ -326,9 +320,9 @@ ${JSON.stringify(formattedItems, null, 2)}
 STRICT RULES:
 1. EXCLUSIVE USE OF OWNED ITEMS: Every outfit must be constructed solely from the user's logged wardrobe items above. Every ID in itemIds must exist in the collection.
 2. Select cohesive, stylish, and practical combinations (e.g. Top + Bottom, or Traditional piece + Loafers, or Top + Bottom + Shoes).
-3. "missingPiecesAdvice": If the user is missing a category in their wardrobe (e.g. no shoes or accessories catalogued yet), choose the best owned pieces for itemIds, and use "missingPiecesAdvice" to suggest what finishing touch or footwear would complement it.
+3. STRICT WARDROBE EXCLUSIVITY: Do NOT recommend, mention, or suggest buying or acquiring any new or missing clothes. Outfits must be styled strictly and exclusively from what the user already has in their collection.
 4. Deeply adapt to the location (${location}) and weather (${weather}) in fabric selection, breathability, and layering.
-5. Provide actionable, high-taste styling tips for each look.
+5. Provide actionable, high-taste styling tips for each look using only the selected owned pieces.
 6. Return valid JSON strictly adhering to the schema.`;
 
   let lastError: unknown = null;

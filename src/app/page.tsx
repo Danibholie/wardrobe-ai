@@ -22,10 +22,10 @@ export const metadata: Metadata = {
       "Your wardrobe already has the answer. Intelligent outfit curation strictly from clothes you own, tailored for Nigerian weather and occasions.",
     images: [
       {
-        url: "/og-image.png",
+        url: SITE_CONFIG.ogImage,
         secureUrl: SITE_CONFIG.ogImage,
-        width: 1672,
-        height: 941,
+        width: 1200,
+        height: 630,
         alt: `${SITE_CONFIG.name} · Your Wardrobe. Your Weather. Your Day.`,
         type: "image/png",
       },
@@ -36,7 +36,14 @@ export const metadata: Metadata = {
     title: "Wardrobe AI — Stop Wondering What to Wear",
     description:
       "Your wardrobe already has the answer. Intelligent outfit curation strictly from clothes you own, tailored for Nigerian weather and occasions.",
-    images: [SITE_CONFIG.ogImage],
+    images: [
+      {
+        url: SITE_CONFIG.ogImage,
+        width: 1200,
+        height: 630,
+        alt: `${SITE_CONFIG.name} · Your Wardrobe. Your Weather. Your Day.`,
+      },
+    ],
     creator: SITE_CONFIG.social.twitterHandle,
   },
 };
