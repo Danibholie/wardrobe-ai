@@ -28,6 +28,7 @@ export type NavbarUser = {
   name?: string | null;
   email?: string | null;
   image?: string | null;
+  role?: string | null;
 };
 
 interface NavbarProps {
@@ -40,6 +41,8 @@ export function Navbar({ user }: NavbarProps) {
   const [desktopMenuOpen, setDesktopMenuOpen] = useState(false);
   const [pricingModalOpen, setPricingModalOpen] = useState(false);
   const desktopMenuRef = useRef<HTMLDivElement>(null);
+
+  const isAdmin = user?.role === "admin";
 
   const { subscription } = useSubscription();
 
@@ -320,14 +323,16 @@ export function Navbar({ user }: NavbarProps) {
                           <Bookmark className="w-4 h-4 text-secondary shrink-0" />
                           <span>Saved Outfits</span>
                         </Link>
-                        <Link
-                          href="/admin"
-                          onClick={() => setDesktopMenuOpen(false)}
-                          className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-body-sm text-on-surface hover:bg-surface-container transition-colors"
-                        >
-                          <Activity className="w-4 h-4 text-secondary shrink-0" />
-                          <span>Admin Dashboard</span>
-                        </Link>
+                        {isAdmin && (
+                          <Link
+                            href="/admin"
+                            onClick={() => setDesktopMenuOpen(false)}
+                            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-body-sm text-on-surface hover:bg-surface-container transition-colors"
+                          >
+                            <Activity className="w-4 h-4 text-secondary shrink-0" />
+                            <span>Admin Dashboard</span>
+                          </Link>
+                        )}
 
                         <div className="flex items-center gap-3 px-3 pt-1 text-[11px] text-on-surface-variant/70">
                           <Link
@@ -493,15 +498,17 @@ export function Navbar({ user }: NavbarProps) {
                   </div>
                 </div>
 
-                <div className="pt-1 flex items-center justify-between">
-                  <Link
-                    href="/admin"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-1.5 text-xs text-on-surface-variant hover:text-on-surface transition-colors"
-                  >
-                    <Activity className="w-3.5 h-3.5 text-secondary shrink-0" />
-                    <span>Admin Dashboard</span>
-                  </Link>
+                <div className={`pt-1 flex items-center ${isAdmin ? "justify-between" : "justify-end"}`}>
+                  {isAdmin && (
+                    <Link
+                      href="/admin"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-1.5 text-xs text-on-surface-variant hover:text-on-surface transition-colors"
+                    >
+                      <Activity className="w-3.5 h-3.5 text-secondary shrink-0" />
+                      <span>Admin Dashboard</span>
+                    </Link>
+                  )}
                   <SignOutButton
                     variant="ghost"
                     onSignedOut={() => setMobileMenuOpen(false)}

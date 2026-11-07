@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { Navbar } from "@/components/Navbar";
+import { isUserAdmin } from "@/lib/admin";
 
 export const metadata: Metadata = {
   title: {
@@ -23,9 +24,16 @@ export default async function DashboardLayout({
     redirect("/signin?callbackUrl=/wardrobe");
   }
 
+  const isAdmin = await isUserAdmin(session.user.email);
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Navbar user={session.user} />
+      <Navbar
+        user={{
+          ...session.user,
+          role: isAdmin ? "admin" : "user",
+        }}
+      />
       <div className="flex-1 w-full">{children}</div>
     </div>
   );

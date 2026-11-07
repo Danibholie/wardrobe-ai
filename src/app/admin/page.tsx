@@ -338,40 +338,25 @@ export default function AdminDashboardPage() {
     }
   }, [activeTab, socialData, isGeneratingSocial, handleGenerateSocialDrop]);
 
-  // Only block the view if access was explicitly denied by the server
-  if (error && (error.includes("Forbidden") || error.includes("Unauthorized") || error.includes("Admin access required"))) {
+  // Clean error state if metrics fail to load for authorized admin
+  if (error && !data) {
     return (
-      <div className="max-w-2xl mx-auto my-16 p-8 bg-white border border-ivory-300 rounded-3xl shadow-sm text-center space-y-5">
-        <div className="w-14 h-14 mx-auto rounded-2xl bg-amber-50 text-amber-800 flex items-center justify-center border border-amber-200">
-          <ShieldAlert className="w-7 h-7" />
+      <div className="max-w-md mx-auto my-16 p-8 bg-surface-container-lowest border border-outline-variant/30 rounded-3xl shadow-sm text-center space-y-4">
+        <div className="w-12 h-12 mx-auto rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
+          <ShieldAlert className="w-6 h-6" />
         </div>
-        <h2 className="font-editorial text-3xl font-bold text-stone-900 tracking-tight">
-          Admin Authorization Required
+        <h2 className="font-display-hero text-xl font-bold text-on-surface">
+          Unable to Load Metrics
         </h2>
-        <p className="text-stone-600 text-sm max-w-md mx-auto leading-relaxed">
+        <p className="text-on-surface-variant text-xs leading-relaxed">
           {error}
         </p>
-        <div className="bg-ivory-100 border border-ivory-300 rounded-xl p-4 text-left text-xs font-mono text-stone-700 max-w-lg mx-auto space-y-1.5">
-          <p className="font-semibold text-stone-900 font-sans text-sm">
-            Quick Setup:
-          </p>
-          <p className="text-stone-600 font-sans">
-            Add your signed-in email address to your{" "}
-            <code className="text-forest font-mono">.env.local</code> file:
-          </p>
-          <div className="p-2.5 bg-white border border-ivory-300 rounded text-forest font-medium select-all">
-            ADMIN_EMAIL=boluwatifelambe@gmail.com
-          </div>
-          <p className="text-stone-500 font-sans pt-1">
-            Or update your user document role to &quot;admin&quot; in MongoDB.
-          </p>
-        </div>
         <button
           onClick={() => fetchMetrics()}
-          className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-forest text-white text-sm font-medium hover:bg-forest-light transition shadow-sm cursor-pointer"
+          className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-primary text-on-primary text-xs font-semibold hover:bg-primary/90 transition shadow-xs cursor-pointer"
         >
-          <RefreshCw className="w-4 h-4" />
-          Retry Access
+          <RefreshCw className="w-3.5 h-3.5" />
+          Retry
         </button>
       </div>
     );

@@ -3,6 +3,7 @@ import Google from "next-auth/providers/google";
 
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
+import { isUserAdmin } from "@/lib/admin";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
@@ -37,12 +38,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         return true;
       }
 
-      // Block unauthenticated access to wardrobe, plan, home, and admin pages
+      // Block unauthenticated access to consumer dashboard pages
       if (
         pathname.startsWith("/wardrobe") ||
         pathname.startsWith("/home") ||
-        pathname.startsWith("/plan") ||
-        pathname.startsWith("/admin")
+        pathname.startsWith("/plan")
       ) {
         return isLoggedIn;
       }
@@ -75,12 +75,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.userId = dbUser._id.toString();
       }
 
+      if (token.email) {
+        const isAdmin = await isUserAdmin(token.email);
+        token.role = isAdmin ? "admin" : "user";
+      }
+
       return token;
     },
 
     async session({ session, token }) {
-      if (session.user && token.userId) {
-        session.user.id = token.userId as string;
+      if (session.user) {
+        if (token.userId) {
+          session.user.id = token.userId as string;
+        }
+        if (token.role) {
+          session.user.role = token.role as string;
+        }
       }
 
       return session;

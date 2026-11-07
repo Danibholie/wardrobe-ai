@@ -3,6 +3,7 @@ import { GoogleGenAI } from "@google/genai";
 import { auth } from "@/auth";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
+import { isUserAdmin } from "@/lib/admin";
 import { CATALOG_ITEMS, CatalogItem } from "@/lib/social-catalog";
 
 export const dynamic = "force-dynamic";
@@ -108,16 +109,11 @@ export async function POST(req: Request) {
       );
     }
 
-    await connectDB();
-
-    const dbUser = await User.findOne({ email: userEmail }).lean();
-    const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
-    const isAuthorized =
-      (adminEmail && userEmail === adminEmail) || dbUser?.role === "admin";
+    const isAuthorized = await isUserAdmin(userEmail);
 
     if (!isAuthorized) {
       return NextResponse.json(
-        { success: false, message: "Forbidden. Admin access required." },
+        { success: false, message: "Forbidden" },
         { status: 403 }
       );
     }

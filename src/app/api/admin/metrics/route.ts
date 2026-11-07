@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
 import { auth } from "@/auth";
 import { connectDB } from "@/lib/db";
+import { isUserAdmin } from "@/lib/admin";
 import User from "@/models/User";
 import WardrobeItem from "@/models/WardrobeItem";
 import SavedOutfit from "@/models/SavedOutfit";
@@ -30,19 +31,13 @@ export async function GET() {
 
     await connectDB();
 
-    // Check if user is an admin
-    const dbUser = await User.findOne({ email: userEmail }).lean();
-    const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
-
-    const isAuthorized =
-      (adminEmail && userEmail === adminEmail) ||
-      dbUser?.role === "admin";
+    const isAuthorized = await isUserAdmin(userEmail);
 
     if (!isAuthorized) {
       return NextResponse.json(
         {
           success: false,
-          message: "Forbidden. Admin access required.",
+          message: "Forbidden",
         },
         { status: 403 }
       );
