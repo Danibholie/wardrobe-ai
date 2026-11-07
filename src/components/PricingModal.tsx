@@ -12,6 +12,7 @@ import {
   Zap,
 } from "lucide-react";
 import type { SubscriptionInfo, BillingCycle } from "@/lib/subscription";
+import { trackBeginCheckout } from "@/lib/analytics";
 
 interface PricingModalProps {
   isOpen: boolean;
@@ -59,6 +60,9 @@ export function PricingModal({
       if (!res.ok || !data.success || !data.paymentUrl) {
         throw new Error(data.message || "Failed to initialize payment.");
       }
+
+      // Track checkout initiation in Google Analytics
+      trackBeginCheckout(billingCycle, billingCycle === "annual" ? 15000 : 1500);
 
       // Redirect user to Flutterwave hosted payment checkout
       window.location.href = data.paymentUrl;

@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { useSubscription } from "@/hooks/useSubscription";
 import { PricingModal } from "@/components/PricingModal";
+import { trackWearLogged } from "@/lib/analytics";
 import {
   CheckCircle2,
   MoreVertical,
@@ -279,6 +280,7 @@ export default function SavedOutfitsPage() {
       }
 
       if (typeof data.wearCount === "number") {
+        trackWearLogged(data.wearCount);
         setOutfits((prev) =>
           prev.map((o) =>
             o.id === outfit.id

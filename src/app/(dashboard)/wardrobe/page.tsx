@@ -29,6 +29,7 @@ import {
 import { OutfitRecommenderModal } from "@/components/OutfitRecommenderModal";
 import { useSubscription } from "@/hooks/useSubscription";
 import { PricingModal } from "@/components/PricingModal";
+import { trackPurchase } from "@/lib/analytics";
 
 type WardrobeItem = {
   id: string;
@@ -153,6 +154,7 @@ export default function WardrobePage() {
         .then((data) => {
           if (data.success) {
             setSuccessMessage("🎉 Payment verified successfully! Welcome to Wardrobe Pro.");
+            trackPurchase(txRef || transactionId || "verified_tx", 1500);
             refreshSubscription();
           } else {
             setActionError(data.message || "Payment verification could not be confirmed.");

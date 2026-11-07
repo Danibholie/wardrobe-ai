@@ -28,6 +28,7 @@ import { formatAiError } from "@/lib/errors";
 import { useLocationWeather, detectLocationAndWeather } from "@/hooks/useLocationWeather";
 import { useSubscription } from "@/hooks/useSubscription";
 import { PricingModal } from "@/components/PricingModal";
+import { trackOutfitGenerated, trackOutfitSaved } from "@/lib/analytics";
 
 export type WardrobeItem = {
   id: string;
@@ -226,6 +227,7 @@ export function OutfitRecommenderModal({
       setTotalWardrobeCount(data.totalWardrobeCount || wardrobeItems.length);
       setSavedOutfitIndexes({});
       setViewStep("results");
+      trackOutfitGenerated(effectiveEvent, effectiveWeather, Boolean(data.isPro));
     } catch (err) {
       setError(formatAiError(err, "Something went wrong styling your outfits."));
     } finally {
@@ -263,6 +265,7 @@ export function OutfitRecommenderModal({
       }
 
       setSavedOutfitIndexes((prev) => ({ ...prev, [index]: true }));
+      trackOutfitSaved(effectiveEvent);
     } catch (err) {
       alert(err instanceof Error ? err.message : "Could not save outfit.");
     } finally {

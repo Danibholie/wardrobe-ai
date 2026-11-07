@@ -27,6 +27,7 @@ import { formatAiError } from "@/lib/errors";
 import { useLocationWeather, detectLocationAndWeather } from "@/hooks/useLocationWeather";
 import { useSubscription } from "@/hooks/useSubscription";
 import { PricingModal } from "@/components/PricingModal";
+import { trackOutfitGenerated, trackOutfitSaved } from "@/lib/analytics";
 
 type WardrobeItem = {
   id: string;
@@ -306,6 +307,7 @@ export default function PlanPage() {
       setActiveOutfitIndex(0);
       setSavedOutfits({});
       refreshSubscription();
+      trackOutfitGenerated(occasion, weather, Boolean(data.isPro));
 
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
@@ -361,6 +363,7 @@ export default function PlanPage() {
       }
 
       setSavedOutfits((prev) => ({ ...prev, [activeOutfitIndex]: true }));
+      trackOutfitSaved(occasion);
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to save outfit.");
     } finally {

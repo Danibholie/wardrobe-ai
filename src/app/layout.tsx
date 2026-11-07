@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { SITE_CONFIG } from "@/lib/site";
 import "./globals.css";
+import { GoogleAnalytics } from "@next/third-parties/google";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -122,6 +123,9 @@ export default function RootLayout({
       </head>
       <body className="bg-background font-body-md text-on-surface antialiased min-h-screen flex flex-col">
         {children}
+        {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
+          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
+        )}
       </body>
     </html>
   );
