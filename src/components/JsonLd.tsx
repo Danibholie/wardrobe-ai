@@ -20,7 +20,7 @@ export function JsonLd({ faqs }: JsonLdProps) {
     sameAs: [
       SITE_CONFIG.social.twitter,
       SITE_CONFIG.social.instagram,
-      SITE_CONFIG.social.linkedin,
+      SITE_CONFIG.social.tiktok,
     ],
   };
 

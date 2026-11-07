@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft, ShieldCheck, Lock, Eye, Database, Sparkles } from "lucide-react";
 import { SITE_CONFIG } from "@/lib/site";
+import { SocialLinks } from "@/components/SocialLinks";
 
 export const metadata: Metadata = {
   title: `Privacy Policy — ${SITE_CONFIG.name}`,
@@ -257,10 +258,13 @@ export default function PrivacyPolicyPage() {
       <footer className="bg-stone-900 text-stone-400 py-10 border-t border-stone-800 text-xs">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>© {new Date().getFullYear()} Wardrobe AI. A product by {SITE_CONFIG.company.name}. All rights reserved.</div>
-          <div className="flex gap-6">
-            <Link className="hover:text-white transition-colors" href="/terms">Terms of Service</Link>
-            <Link className="text-white font-medium" href="/privacy">Privacy Policy</Link>
-            <Link className="hover:text-white transition-colors" href="/">Home</Link>
+          <div className="flex flex-col sm:flex-row items-center gap-6">
+            <div className="flex gap-6">
+              <Link className="hover:text-white transition-colors" href="/terms">Terms of Service</Link>
+              <Link className="text-white font-medium" href="/privacy">Privacy Policy</Link>
+              <Link className="hover:text-white transition-colors" href="/">Home</Link>
+            </div>
+            <SocialLinks variant="compact" iconSize="sm" />
           </div>
         </div>
       </footer>

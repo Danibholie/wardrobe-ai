@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { ArrowLeft, ShieldCheck, Sparkles, CheckCircle2 } from "lucide-react";
 import { auth, signIn } from "@/auth";
 import { GoogleSignInButton } from "./GoogleSignInButton";
+import { SocialLinks } from "@/components/SocialLinks";
 
 export const metadata: Metadata = {
   title: "Sign In — Wardrobe AI",
@@ -69,7 +70,8 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
           </h1>
 
           <p className="font-body-md text-body-md text-on-surface-variant max-w-sm mb-8">
-            Sign in to upload your clothes, organise your wardrobe, and receive smart outfit recommendations for Lagos weather and occasions.
+            Sign in to upload your clothes, organise your wardrobe, and receive
+            smart outfit recommendations for Lagos weather and occasions.
           </p>
 
           {/* Error alert if OAuth fails */}
@@ -91,7 +93,6 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
           {/* Standard Google Sign-In Button with Interactive Loading State */}
           <form
             action={async () => {
-              "use server";
               await signIn("google", {
                 redirectTo: callbackUrl,
               });
@@ -103,11 +104,17 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
 
           <p className="text-[11px] text-on-surface-variant/70 mt-3 text-center">
             By signing in, you agree to our{" "}
-            <Link href="/terms" className="underline hover:text-primary transition-colors">
+            <Link
+              href="/terms"
+              className="underline hover:text-primary transition-colors"
+            >
               Terms of Service
             </Link>{" "}
             and{" "}
-            <Link href="/privacy" className="underline hover:text-primary transition-colors">
+            <Link
+              href="/privacy"
+              className="underline hover:text-primary transition-colors"
+            >
               Privacy Policy
             </Link>
             .
@@ -131,12 +138,20 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
         </div>
 
         {/* Security & Privacy Microcopy */}
-        <footer className="mt-6 text-center">
+        <footer className="mt-6 text-center space-y-3">
           <div className="inline-flex items-center justify-center gap-2 text-on-surface-variant/80">
             <ShieldCheck className="w-4 h-4 text-secondary flex-shrink-0" />
             <p className="font-body-sm text-xs">
-              Secure authentication via Google. Your wardrobe items are private to you.
+              Secure authentication via Google. Your wardrobe items are private
+              to you.
             </p>
+          </div>
+
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <span className="text-[11px] text-on-surface-variant/60 font-medium">
+              Follow us:
+            </span>
+            <SocialLinks variant="icons" iconSize="sm" />
           </div>
         </footer>
       </div>

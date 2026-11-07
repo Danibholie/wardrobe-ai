@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft, Home, Sparkles } from "lucide-react";
+import { SocialLinks } from "@/components/SocialLinks";
 
 export default function NotFound() {
   return (
@@ -49,8 +50,14 @@ export default function NotFound() {
           </Link>
         </div>
 
+        {/* Social channels */}
+        <div className="mt-10 flex flex-col items-center gap-2">
+          <span className="text-[11px] text-[#183325]/60 font-medium">Connect with our fashion community</span>
+          <SocialLinks variant="icons" iconSize="sm" />
+        </div>
+
         {/* Brand footer watermark */}
-        <div className="mt-14 text-xs font-mono text-[#183325]/40 tracking-wider">
+        <div className="mt-8 text-xs font-mono text-[#183325]/40 tracking-wider">
           Wardrobe AI · Lagos, Nigeria
         </div>
       </div>

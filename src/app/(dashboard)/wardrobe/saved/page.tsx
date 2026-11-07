@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSubscription } from "@/hooks/useSubscription";
 import { PricingModal } from "@/components/PricingModal";
 import { trackWearLogged } from "@/lib/analytics";
+import { SocialLinks } from "@/components/SocialLinks";
 import {
   CheckCircle2,
   MoreVertical,
@@ -753,9 +754,11 @@ export default function SavedOutfitsPage() {
                   <span className="mx-space-xs text-outline-variant">·</span>
                   <span>Curated Wardrobe Architecture</span>
                 </div>
-                <div>
-                  © {new Date().getFullYear()} Wardrobe AI. All rights reserved.
-                  Lagos &amp; Global.
+                <div className="flex items-center gap-6">
+                  <SocialLinks variant="compact" iconSize="sm" />
+                  <div>
+                    © {new Date().getFullYear()} Wardrobe AI. Lagos &amp; Global.
+                  </div>
                 </div>
               </div>
             </footer>

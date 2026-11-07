@@ -27,6 +27,7 @@ import { formatAiError } from "@/lib/errors";
 import { useLocationWeather, detectLocationAndWeather } from "@/hooks/useLocationWeather";
 import { useSubscription } from "@/hooks/useSubscription";
 import { PricingModal } from "@/components/PricingModal";
+import { SocialLinks } from "@/components/SocialLinks";
 import { trackOutfitGenerated, trackOutfitSaved } from "@/lib/analytics";
 
 type WardrobeItem = {
@@ -631,7 +632,10 @@ export default function PlanPage() {
                     <span className="mx-space-xs text-outline-variant">·</span>
                     <span>Curated Wardrobe Architecture</span>
                   </div>
-                  <div>© 2025 Wardrobe AI. All rights reserved. Lagos &amp; Global.</div>
+                  <div className="flex items-center gap-6">
+                    <SocialLinks variant="compact" iconSize="sm" />
+                    <div>© {new Date().getFullYear()} Wardrobe AI. Lagos &amp; Global.</div>
+                  </div>
                 </div>
               </footer>
             </>

@@ -48,7 +48,6 @@ export const SITE_CONFIG = {
     twitterHandle: "@WardrobeAING",
     tiktok: "https://www.tiktok.com/@wardrobeaing",
     instagram: "https://instagram.com/WardrobeAING",
-    linkedin: "https://linkedin.com/company/WardrobeAING",
   },
   locale: "en_NG",
 } as const;

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { SocialLinks } from "@/components/SocialLinks";
 
 export interface FaqItem {
   question: string;
@@ -1554,14 +1555,17 @@ export default function LandingPage() {
                 </li>
               </ul>
             </div>
-            {/* Col 4: Status & Origin */}
+            {/* Col 4: Community & Socials */}
             <div>
               <h4 className="text-xs font-semibold uppercase tracking-wider text-stone-200 mb-3">
-                Community
+                Follow &amp; Community
               </h4>
-              <p className="text-xs text-stone-400 mb-2">
-                Designed with focus in Nigeria for global lifestyles.
+              <p className="text-xs text-stone-400 mb-3 leading-relaxed">
+                Join our community for daily Nigerian fashion styling, outfit drops, and updates.
               </p>
+              <div className="mb-4">
+                <SocialLinks variant="icons" iconSize="sm" />
+              </div>
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-stone-800 text-stone-300 text-xs">
                 <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
                 All AI Systems Operational
@@ -1573,17 +1577,7 @@ export default function LandingPage() {
               © {new Date().getFullYear()} Wardrobe AI. A product by LBD Digital
               Hub. All rights reserved.
             </div>
-            <div className="flex gap-6 text-stone-400">
-              <a className="hover:text-white transition-colors" href="#">
-                Twitter
-              </a>
-              <a className="hover:text-white transition-colors" href="#">
-                Instagram
-              </a>
-              <a className="hover:text-white transition-colors" href="#">
-                LinkedIn
-              </a>
-            </div>
+            <SocialLinks variant="compact" iconSize="sm" />
           </div>
         </div>
       </footer>

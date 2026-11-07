@@ -23,6 +23,7 @@ import { useLocationWeather } from "@/hooks/useLocationWeather";
 import { useSubscription } from "@/hooks/useSubscription";
 import { PricingModal } from "@/components/PricingModal";
 import { SubscriptionBanner } from "@/components/SubscriptionBanner";
+import { SOCIAL_PROFILES } from "@/components/SocialLinks";
 
 export type NavbarUser = {
   name?: string | null;
@@ -351,6 +352,28 @@ export function Navbar({ user }: NavbarProps) {
                             Terms
                           </Link>
                         </div>
+
+                        {/* Follow On Socials */}
+                        <div className="pt-2 mt-1.5 border-t border-outline-variant/15 px-3 flex items-center justify-between">
+                          <span className="text-[10px] font-medium text-on-surface-variant/70 uppercase tracking-wider">
+                            Follow
+                          </span>
+                          <div className="flex items-center gap-1.5">
+                            {SOCIAL_PROFILES.map((social) => (
+                              <a
+                                key={social.name}
+                                href={social.href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title={`Follow Wardrobe AI on ${social.name}`}
+                                aria-label={`Follow Wardrobe AI on ${social.name}`}
+                                className="w-6 h-6 rounded-full bg-surface-container hover:bg-surface-container-high border border-outline-variant/30 flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors"
+                              >
+                                {social.icon("w-3 h-3")}
+                              </a>
+                            ))}
+                          </div>
+                        </div>
                       </div>
 
                       {/* Sign Out CTA */}
@@ -515,22 +538,39 @@ export function Navbar({ user }: NavbarProps) {
                   />
                 </div>
 
-                <div className="pt-2 border-t border-outline-variant/15 flex items-center gap-3 text-[11px] text-on-surface-variant/70">
-                  <Link
-                    href="/privacy"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="hover:text-primary transition-colors"
-                  >
-                    Privacy Policy
-                  </Link>
-                  <span>·</span>
-                  <Link
-                    href="/terms"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="hover:text-primary transition-colors"
-                  >
-                    Terms of Service
-                  </Link>
+                <div className="pt-2 border-t border-outline-variant/15 flex items-center justify-between text-[11px] text-on-surface-variant/70">
+                  <div className="flex items-center gap-3">
+                    <Link
+                      href="/privacy"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="hover:text-primary transition-colors"
+                    >
+                      Privacy Policy
+                    </Link>
+                    <span>·</span>
+                    <Link
+                      href="/terms"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="hover:text-primary transition-colors"
+                    >
+                      Terms of Service
+                    </Link>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {SOCIAL_PROFILES.map((social) => (
+                      <a
+                        key={social.name}
+                        href={social.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={`Follow Wardrobe AI on ${social.name}`}
+                        aria-label={`Follow Wardrobe AI on ${social.name}`}
+                        className="w-6 h-6 rounded-full bg-surface-container hover:bg-surface-container-high border border-outline-variant/30 flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors"
+                      >
+                        {social.icon("w-3 h-3")}
+                      </a>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
