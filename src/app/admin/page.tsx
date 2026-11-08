@@ -765,7 +765,7 @@ export default function AdminDashboardPage() {
                   {revenue.activePaidSubscribers}
                 </div>
                 <p className="text-[10px] text-stone-500">
-                  + {revenue.activeTrials} on 3-day trial
+                  + {revenue.activeTrials} on 7-day trial
                 </p>
               </div>
 
@@ -1025,7 +1025,7 @@ export default function AdminDashboardPage() {
                 </span>
               </div>
               <p className="text-xs text-stone-500">
-                Plus <strong>{revenue.activeTrials}</strong> users on active 3-day trial
+                Plus <strong>{revenue.activeTrials}</strong> users on active 7-day trial
               </p>
             </div>
 
@@ -1124,7 +1124,7 @@ export default function AdminDashboardPage() {
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-3.5 h-3.5 text-forest shrink-0" />
-                    <span><strong>3-day automatic trial</strong> for all newly registered users</span>
+                    <span><strong>7-day automatic trial</strong> for all newly registered users</span>
                   </li>
                   <li className="flex items-center gap-2">
                     <CheckCircle2 className="w-3.5 h-3.5 text-forest shrink-0" />
@@ -1540,7 +1540,7 @@ export default function AdminDashboardPage() {
                         {user.subscriptionTier === "pro" ? (
                           user.isTrial ? (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
-                              Pro Trial (3d)
+                              Pro Trial (7d)
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">

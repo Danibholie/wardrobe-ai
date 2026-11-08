@@ -4,6 +4,7 @@ import Google from "next-auth/providers/google";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
 import { isUserAdmin } from "@/lib/admin";
+import { PRO_TRIAL_DAYS } from "@/lib/subscription";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
@@ -59,7 +60,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         if (!dbUser) {
           const trialExpiresAt = new Date();
-          trialExpiresAt.setDate(trialExpiresAt.getDate() + 3);
+          trialExpiresAt.setDate(trialExpiresAt.getDate() + PRO_TRIAL_DAYS);
 
           dbUser = await User.create({
             name: user.name ?? undefined,

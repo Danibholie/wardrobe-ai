@@ -77,7 +77,7 @@ export function JsonLd({ faqs }: JsonLdProps) {
           unitText: "MONTH",
         },
         description:
-          "Unlimited wardrobe items, unlimited daily outfit recommendations, event styling (Owambe, Weddings, Dates), full closet rotation, and 3-day free trial on signup.",
+          "Unlimited wardrobe items, unlimited daily outfit recommendations, event styling (Owambe, Weddings, Dates), full closet rotation, and 7-day free trial on signup.",
       },
     ],
     featureList: [

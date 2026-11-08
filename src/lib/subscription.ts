@@ -7,6 +7,7 @@ export const STARTER_ITEM_LIMIT = 20;
 export const STARTER_DAILY_GENERATIONS = 1;
 export const STARTER_ACTIVE_WARDROBE_WINDOW = 20;
 export const STARTER_SAVED_OUTFIT_LIMIT = 5;
+export const PRO_TRIAL_DAYS = 7;
 export const PRO_PRICE_MONTHLY_NGN = 1500;
 export const PRO_DURATION_DAYS_MONTHLY = 30;
 export const PRO_PRICE_ANNUAL_NGN = 15000;
@@ -121,14 +122,14 @@ export async function getUserSubscription(
   // Handle legacy users without subscription fields
   if (!user.subscriptionTier) {
     const accountAgeMs = Date.now() - new Date(user.createdAt).getTime();
-    const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
+    const trialDaysMs = PRO_TRIAL_DAYS * 24 * 60 * 60 * 1000;
 
-    if (accountAgeMs < threeDaysMs) {
-      // Still within the 3-day trial window
+    if (accountAgeMs < trialDaysMs) {
+      // Still within the trial window
       user.subscriptionTier = "pro";
       user.subscriptionStatus = "active";
       user.subscriptionExpiresAt = new Date(
-        new Date(user.createdAt).getTime() + threeDaysMs
+        new Date(user.createdAt).getTime() + trialDaysMs
       );
       user.isTrial = true;
     } else {

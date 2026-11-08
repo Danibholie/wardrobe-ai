@@ -1226,14 +1226,19 @@ export default function LandingPage() {
                     </li>
                   </ul>
                 </div>
-                <Link
-                  className="w-full text-center py-3 px-6 rounded-full bg-forest text-white text-sm font-semibold hover:bg-forest-dark transition-colors shadow-md"
-                  href={`/signin?callbackUrl=${encodeURIComponent(`/wardrobe?upgrade=${billingCycle}`)}`}
-                >
-                  {billingCycle === "annual"
-                    ? "Upgrade to Annual Pro (₦15,000)"
-                    : "Upgrade to Pro (₦1,500)"}
-                </Link>
+                <div>
+                  <Link
+                    className="w-full block text-center py-3 px-6 rounded-full bg-forest text-white text-sm font-semibold hover:bg-forest-dark transition-colors shadow-md"
+                    href={`/signin?callbackUrl=${encodeURIComponent(`/wardrobe?upgrade=${billingCycle}`)}`}
+                  >
+                    {billingCycle === "annual"
+                      ? "Upgrade to Annual Pro (₦15,000)"
+                      : "Start 7-Day Free Trial"}
+                  </Link>
+                  <p className="text-[11px] text-center text-stone-500 mt-2">
+                    Includes 7-day full Pro trial on signup · No card required
+                  </p>
+                </div>
               </div>
             </div>
 

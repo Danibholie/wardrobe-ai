@@ -296,9 +296,13 @@ export function PricingModal({
                     <>
                       <Crown className="w-4 h-4" />
                       <span>
-                        {billingCycle === "monthly"
-                          ? "Renew Pro (₦1,500 for +30 Days)"
-                          : "Renew Annual Pro (₦15,000 for +365 Days)"}
+                        {subscription?.isTrial
+                          ? billingCycle === "monthly"
+                            ? "Lock In Pro (₦1,500 for +30 Days)"
+                            : "Lock In Annual Pro (₦15,000 for +365 Days)"
+                          : billingCycle === "monthly"
+                            ? "Renew Pro (₦1,500 for +30 Days)"
+                            : "Renew Annual Pro (₦15,000 for +365 Days)"}
                       </span>
                     </>
                   ) : (

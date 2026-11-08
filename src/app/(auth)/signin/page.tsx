@@ -1,3 +1,4 @@
+"use server";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -37,7 +38,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
   return (
     <main className="min-h-screen w-full flex flex-col items-center justify-center p-margin-mobile md:p-margin relative overflow-hidden bg-background">
       {/* Ambient background blur elements matching Home design */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 md:w-[600px] h-96 md:h-[600px] bg-gradient-to-tr from-surface-container via-surface-container-low to-secondary-container/20 rounded-full blur-3xl -z-10 opacity-60 pointer-events-none" />
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 md:w-150 h-96 md:h-150 bg-linear-to-tr from-surface-container via-surface-container-low to-secondary-container/20 rounded-full blur-3xl -z-10 opacity-60 pointer-events-none" />
 
       <div className="w-full max-w-md mx-auto flex flex-col items-center">
         {/* Navigation back to Home */}
@@ -93,7 +94,6 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
           {/* Standard Google Sign-In Button with Interactive Loading State */}
           <form
             action={async () => {
-              "use server";
               await signIn("google", {
                 redirectTo: callbackUrl,
               });
@@ -124,15 +124,15 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
           {/* Features Highlights */}
           <div className="w-full mt-8 pt-6 border-t border-outline-variant/30 text-left space-y-2.5">
             <div className="flex items-center gap-2.5 text-body-sm text-on-surface-variant">
-              <CheckCircle2 className="w-4 h-4 text-[#173B2A] flex-shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-[#173B2A] shrink-0" />
               <span>Instant AI identification of garments</span>
             </div>
             <div className="flex items-center gap-2.5 text-body-sm text-on-surface-variant">
-              <CheckCircle2 className="w-4 h-4 text-[#173B2A] flex-shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-[#173B2A] shrink-0" />
               <span>Weather-calibrated outfit styling for Nigeria</span>
             </div>
             <div className="flex items-center gap-2.5 text-body-sm text-on-surface-variant">
-              <CheckCircle2 className="w-4 h-4 text-[#173B2A] flex-shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-[#173B2A] shrink-0" />
               <span>Traditional &amp; contemporary wardrobe curation</span>
             </div>
           </div>
@@ -141,7 +141,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
         {/* Security & Privacy Microcopy */}
         <footer className="mt-6 text-center space-y-3">
           <div className="inline-flex items-center justify-center gap-2 text-on-surface-variant/80">
-            <ShieldCheck className="w-4 h-4 text-secondary flex-shrink-0" />
+            <ShieldCheck className="w-4 h-4 text-secondary shrink-0" />
             <p className="font-body-sm text-xs">
               Secure authentication via Google. Your wardrobe items are private
               to you.
