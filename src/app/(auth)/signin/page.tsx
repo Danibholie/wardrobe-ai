@@ -93,6 +93,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
           {/* Standard Google Sign-In Button with Interactive Loading State */}
           <form
             action={async () => {
+              "use server";
               await signIn("google", {
                 redirectTo: callbackUrl,
               });
