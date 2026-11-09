@@ -1,11 +1,11 @@
-"use server";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, ShieldCheck, Sparkles, CheckCircle2 } from "lucide-react";
-import { auth, signIn } from "@/auth";
+import { auth } from "@/auth";
 import { GoogleSignInButton } from "./GoogleSignInButton";
 import { SocialLinks } from "@/components/SocialLinks";
+import { handleGoogleSignIn } from "./actions";
 
 export const metadata: Metadata = {
   title: "Sign In — Wardrobe AI",
@@ -93,11 +93,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
 
           {/* Standard Google Sign-In Button with Interactive Loading State */}
           <form
-            action={async () => {
-              await signIn("google", {
-                redirectTo: callbackUrl,
-              });
-            }}
+            action={handleGoogleSignIn.bind(null, callbackUrl)}
             className="w-full"
           >
             <GoogleSignInButton />
