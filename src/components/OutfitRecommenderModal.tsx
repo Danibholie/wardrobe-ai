@@ -197,10 +197,14 @@ export function OutfitRecommenderModal({
     setError(null);
     setLimitReached(false);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
+
     try {
       const response = await fetch("/api/recommend-outfits", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({
           location,
           weather: effectiveWeather,
@@ -210,6 +214,7 @@ export function OutfitRecommenderModal({
           anchorItemId: anchorItemId || undefined,
         }),
       });
+      clearTimeout(timeoutId);
 
       const data = await response.json();
 
@@ -229,8 +234,10 @@ export function OutfitRecommenderModal({
       setViewStep("results");
       trackOutfitGenerated(effectiveEvent, effectiveWeather, Boolean(data.isPro));
     } catch (err) {
+      clearTimeout(timeoutId);
       setError(formatAiError(err, "Something went wrong styling your outfits."));
     } finally {
+      clearTimeout(timeoutId);
       setGenerating(false);
     }
   }

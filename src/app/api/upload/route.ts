@@ -21,6 +21,8 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+export const maxDuration = 60;
+
 export async function POST(request: Request) {
   const reqStartTime = performance.now();
   let uploadStartTime = 0;

@@ -82,6 +82,116 @@ function getColorHex(colorName: string): string {
   return map[key] || "#737873";
 }
 
+/**
+ * Scales and compresses an image in the browser down to max 1280px dimension
+ * and ~85% JPEG quality. Preserves sharp colors and details while cutting file
+ * sizes from 10MB+ down to ~250-400KB for near-instant mobile uploads.
+ */
+async function compressImageForUpload(
+  file: File,
+  maxDimension = 1280,
+  quality = 0.85
+): Promise<File> {
+  // If already under 400KB and standard image, skip compression
+  if (
+    file.size <= 400 * 1024 &&
+    (file.type === "image/jpeg" || file.type === "image/webp")
+  ) {
+    return file;
+  }
+
+  return new Promise((resolve) => {
+    if (typeof window === "undefined" || typeof FileReader === "undefined") {
+      resolve(file);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onerror = () => resolve(file);
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onerror = () => resolve(file);
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          resolve(file);
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              resolve(file);
+              return;
+            }
+            const cleanName = file.name.replace(/\.[^/.]+$/, "") + ".jpg";
+            const compressedFile = new File([blob], cleanName, {
+              type: "image/jpeg",
+              lastModified: Date.now(),
+            });
+            resolve(compressedFile);
+          },
+          "image/jpeg",
+          quality
+        );
+      };
+      img.src = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * Robust fetch wrapper with AbortController timeout.
+ * Prevents requests from hanging indefinitely if mobile connectivity drops.
+ */
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit = {},
+  timeoutMs = 35000
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    return response;
+  } catch (error: unknown) {
+    if (
+      (error instanceof DOMException && error.name === "AbortError") ||
+      (error instanceof Error && error.name === "AbortError") ||
+      (error instanceof Error && error.message.toLowerCase().includes("aborted"))
+    ) {
+      throw new Error(
+        "Request timed out due to slow network. Please check your internet connection and try again."
+      );
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 export default function AddClothingPage() {
   const [image, setImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -363,14 +473,21 @@ export default function AddClothingPage() {
     try {
       setUploading(true);
 
+      // Pre-compress photo on client to turn 10MB into ~300KB
+      const fileToUpload = await compressImageForUpload(file);
+
       // Step 1: Upload photo to Cloudinary
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", fileToUpload);
 
-      const uploadResponse = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
+      const uploadResponse = await fetchWithTimeout(
+        "/api/upload",
+        {
+          method: "POST",
+          body: formData,
+        },
+        35000
+      );
 
       const uploadData = await uploadResponse.json();
 
@@ -390,11 +507,15 @@ export default function AddClothingPage() {
       // Step 2: Identify clothing with Gemini AI
       setIdentifying(true);
 
-      const identifyResponse = await fetch("/api/identify-clothing", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageUrl: currentImageUrl }),
-      });
+      const identifyResponse = await fetchWithTimeout(
+        "/api/identify-clothing",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ imageUrl: currentImageUrl }),
+        },
+        45000
+      );
 
       const identifyData = await identifyResponse.json();
 
@@ -490,14 +611,18 @@ export default function AddClothingPage() {
     setError(null);
 
     try {
-      const response = await fetch("/api/wardrobe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...details,
-          imageUrl: uploadedUrl,
-        }),
-      });
+      const response = await fetchWithTimeout(
+        "/api/wardrobe",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...details,
+            imageUrl: uploadedUrl,
+          }),
+        },
+        25000
+      );
 
       const data = await response.json();
 

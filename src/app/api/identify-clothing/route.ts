@@ -4,6 +4,8 @@ import { parseAiError } from "@/lib/errors";
 import { trackMetric } from "@/lib/telemetry";
 import { canUploadClothing } from "@/lib/subscription";
 
+export const maxDuration = 60;
+
 export async function POST(request: Request) {
   const reqStartTime = performance.now();
   let aiStartTime = 0;

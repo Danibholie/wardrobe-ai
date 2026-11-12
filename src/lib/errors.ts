@@ -136,12 +136,18 @@ export function parseAiError(
     searchCorpus.includes("api key") ||
     searchCorpus.includes("permission denied");
 
-  // Check 4: Network / Fetch failure
+  // Check 4: Network / Fetch failure & Timeouts
   const isNetworkError =
     searchCorpus.includes("failed to fetch") ||
     searchCorpus.includes("econnrefused") ||
     searchCorpus.includes("enotfound") ||
     searchCorpus.includes("network error");
+
+  const isTimeoutError =
+    searchCorpus.includes("timed out") ||
+    searchCorpus.includes("timeout") ||
+    searchCorpus.includes("aborterror") ||
+    searchCorpus.includes("aborted");
 
   // Build the user-friendly message
   let friendlyMessage = fallbackMessage;
@@ -166,6 +172,9 @@ export function parseAiError(
     statusCode = 401;
     friendlyMessage =
       "AI authentication error. Please verify the Gemini API key in your server environment.";
+  } else if (isTimeoutError) {
+    friendlyMessage =
+      "Request timed out due to network latency. Please check your internet connection and try again.";
   } else if (isNetworkError) {
     friendlyMessage =
       "Unable to reach the AI styling service. Please check your internet connection and try again.";
