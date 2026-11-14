@@ -162,7 +162,7 @@ export default function PlanPage() {
   const [savingIndex, setSavingIndex] = useState<number | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const { subscription, refreshSubscription } = useSubscription();
+  const { subscription, loading: loadingSubscription, refreshSubscription } = useSubscription();
   const [pricingOpen, setPricingOpen] = useState(false);
   const [pricingReason, setPricingReason] = useState<string | undefined>(undefined);
   const [limitReached, setLimitReached] = useState(false);
@@ -791,39 +791,49 @@ export default function PlanPage() {
                       </span>
                     </div>
                     <div className="flex flex-wrap gap-space-xs sm:gap-space-sm" id="occasion-group">
-                      {OCCASIONS.map((occ) => {
-                        const isSelected = occasion === occ;
-                        const isProOnly = occ === "Wedding" || occ === "Date";
-                        const isLocked = !subscription?.isPro && isProOnly;
-                        return (
-                          <button
-                            key={occ}
-                            type="button"
-                            onClick={() => {
-                              if (isLocked) {
-                                setPricingReason(
-                                  `Special event styling (${occ}) is exclusive to Wardrobe Pro. Upgrade to style looks for weddings, owambe, and date nights.`
-                                );
-                                setPricingOpen(true);
-                                return;
-                              }
-                              setOccasion(occ);
-                            }}
-                            className={`px-space-md py-2 rounded-full font-label-md text-label-md transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
-                              isSelected
-                                ? "bg-primary-container text-on-primary shadow-sm font-semibold"
-                                : "bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-medium"
-                            }`}
-                          >
-                            <span>{occ}</span>
-                            {isLocked && (
-                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-700 border border-amber-500/30">
-                                PRO
-                              </span>
-                            )}
-                          </button>
-                        );
-                      })}
+                      {loadingSubscription ? (
+                        Array.from({ length: 6 }).map((_, i) => (
+                          <div
+                            key={i}
+                            className="h-[38px] rounded-full bg-[#EAE8E2] animate-pulse"
+                            style={{ width: `${[72, 80, 76, 68, 86, 92][i]}px` }}
+                          />
+                        ))
+                      ) : (
+                        OCCASIONS.map((occ) => {
+                          const isSelected = occasion === occ;
+                          const isProOnly = occ === "Wedding" || occ === "Date";
+                          const isLocked = !subscription?.isPro && isProOnly;
+                          return (
+                            <button
+                              key={occ}
+                              type="button"
+                              onClick={() => {
+                                if (isLocked) {
+                                  setPricingReason(
+                                    `Special event styling (${occ}) is exclusive to Wardrobe Pro. Upgrade to style looks for weddings, owambe, and date nights.`
+                                  );
+                                  setPricingOpen(true);
+                                  return;
+                                }
+                                setOccasion(occ);
+                              }}
+                              className={`px-space-md py-2 rounded-full font-label-md text-label-md transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
+                                isSelected
+                                  ? "bg-primary-container text-on-primary shadow-sm font-semibold"
+                                  : "bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-medium"
+                              }`}
+                            >
+                              <span>{occ}</span>
+                              {isLocked && (
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-700 border border-amber-500/30">
+                                  PRO
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })
+                      )}
                     </div>
                   </div>
 

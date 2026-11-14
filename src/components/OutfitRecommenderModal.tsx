@@ -174,7 +174,7 @@ export function OutfitRecommenderModal({
   const [savingIndex, setSavingIndex] = useState<number | null>(null);
   const [viewStep, setViewStep] = useState<"form" | "results">("form");
 
-  const { subscription } = useSubscription();
+  const { subscription, loading: loadingSubscription } = useSubscription();
   const [pricingOpen, setPricingOpen] = useState(false);
   const [pricingReason, setPricingReason] = useState<string | undefined>(undefined);
   const [limitReached, setLimitReached] = useState(false);
@@ -476,7 +476,7 @@ export function OutfitRecommenderModal({
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                       {EVENT_PRESETS.map((event) => {
                         const isSelected = selectedEvent === event.value;
-                        const isLocked = !subscription?.isPro && (event as any).isProOnly;
+                        const isLocked = !loadingSubscription && !subscription?.isPro && (event as any).isProOnly;
                         return (
                           <button
                             type="button"
