@@ -174,12 +174,12 @@ export default function DashboardHomePage() {
                   {greeting}, {userName}
                 </h1>
                 <div className="flex items-center gap-2 text-on-surface-variant font-label-md text-label-md flex-wrap">
-                  <MapPin className="w-4 h-4 text-secondary flex-shrink-0" />
+                  <MapPin className="w-4 h-4 text-secondary shrink-0" />
                   <span>
                     {weatherLoading ? "Detecting location..." : fullLocation}
                   </span>
                   <span className="text-outline-variant font-light">·</span>
-                  <CloudSun className="w-4 h-4 text-secondary flex-shrink-0" />
+                  <CloudSun className="w-4 h-4 text-secondary shrink-0" />
                   <span className="text-on-surface font-medium">
                     {weatherLoading ? "Checking weather..." : weatherSummary}
                   </span>
@@ -187,7 +187,7 @@ export default function DashboardHomePage() {
               </div>
 
               <div className="hidden sm:flex items-center gap-space-xs text-on-surface-variant font-label-md text-label-md">
-                <Calendar className="w-4 h-4 text-secondary flex-shrink-0" />
+                <Calendar className="w-4 h-4 text-secondary shrink-0" />
                 <span>{currentDateFormatted}</span>
               </div>
             </div>
@@ -198,7 +198,7 @@ export default function DashboardHomePage() {
             <div className="relative z-10 flex flex-col gap-space-md max-w-2xl">
               <div className="space-y-space-xs">
                 <div className="inline-flex items-center gap-1.5 text-secondary font-label-caps text-label-caps uppercase tracking-widest font-bold">
-                  <Sparkles className="w-3.5 h-3.5 text-secondary flex-shrink-0" />
+                  <Sparkles className="w-3.5 h-3.5 text-secondary shrink-0" />
                   <span>Intelligent Styling</span>
                 </div>
                 <h2 className="font-headline-md text-headline-md text-primary tracking-tight font-medium">
@@ -219,40 +219,39 @@ export default function DashboardHomePage() {
                   className="flex flex-wrap gap-2 pt-1"
                   id="occasion-container"
                 >
-                  {loadingSubscription ? (
-                    Array.from({ length: 6 }).map((_, i) => (
-                      <div
-                        key={i}
-                        className="h-[38px] rounded-full bg-[#EAE8E2] animate-pulse"
-                        style={{ width: `${[72, 82, 66, 88, 92, 70][i]}px` }}
-                      />
-                    ))
-                  ) : (
-                    OCCASIONS.map((occ) => {
-                      const isSelected = selectedOccasion.label === occ.label;
-                      const isProOnly = occ.label === "Wedding" || occ.label === "Date";
-                      const isLocked = !subscription?.isPro && isProOnly;
-                      return (
-                        <button
-                          key={occ.label}
-                          type="button"
-                          onClick={() => setSelectedOccasion(occ)}
-                          className={`occasion-chip px-4 py-2 rounded-full font-label-md text-label-md transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
-                            isSelected
-                              ? "bg-primary text-on-primary shadow-sm font-semibold"
-                              : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high"
-                          }`}
-                        >
-                          <span>{occ.label}</span>
-                          {isLocked && (
-                            <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-700 border border-amber-500/30">
-                              PRO
-                            </span>
-                          )}
-                        </button>
-                      );
-                    })
-                  )}
+                  {loadingSubscription
+                    ? Array.from({ length: 6 }).map((_, i) => (
+                        <div
+                          key={i}
+                          className="h-9.5 rounded-full bg-[#EAE8E2] animate-pulse"
+                          style={{ width: `${[72, 82, 66, 88, 92, 70][i]}px` }}
+                        />
+                      ))
+                    : OCCASIONS.map((occ) => {
+                        const isSelected = selectedOccasion.label === occ.label;
+                        const isProOnly =
+                          occ.label === "Wedding" || occ.label === "Date";
+                        const isLocked = !subscription?.isPro && isProOnly;
+                        return (
+                          <button
+                            key={occ.label}
+                            type="button"
+                            onClick={() => setSelectedOccasion(occ)}
+                            className={`occasion-chip px-4 py-2 rounded-full font-label-md text-label-md transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
+                              isSelected
+                                ? "bg-primary text-on-primary shadow-sm font-semibold"
+                                : "bg-surface-container text-on-surface-variant hover:bg-surface-container-high"
+                            }`}
+                          >
+                            <span>{occ.label}</span>
+                            {isLocked && (
+                              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-700 border border-amber-500/30">
+                                PRO
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
                 </div>
               </div>
 
@@ -406,9 +405,9 @@ export default function DashboardHomePage() {
                     <div className="h-4 w-32 bg-[#EAE8E2] rounded" />
                     <div className="h-6 w-3/4 bg-[#EAE8E2] rounded" />
                     <div className="grid grid-cols-3 gap-2">
-                      <div className="aspect-[4/5] bg-[#EAE8E2] rounded-lg" />
-                      <div className="aspect-[4/5] bg-[#EAE8E2] rounded-lg" />
-                      <div className="aspect-[4/5] bg-[#EAE8E2] rounded-lg" />
+                      <div className="aspect-4/5 bg-[#EAE8E2] rounded-lg" />
+                      <div className="aspect-4/5 bg-[#EAE8E2] rounded-lg" />
+                      <div className="aspect-4/5 bg-[#EAE8E2] rounded-lg" />
                     </div>
                   </div>
                 ))}
@@ -479,7 +478,7 @@ export default function DashboardHomePage() {
                       {outfit.items.slice(0, 3).map((item, idx) => (
                         <div
                           key={item.id || idx}
-                          className="aspect-[4/5] rounded-lg bg-surface-container overflow-hidden relative"
+                          className="aspect-4/5 rounded-lg bg-surface-container overflow-hidden relative"
                         >
                           {item.imageUrl ? (
                             <img
@@ -500,7 +499,7 @@ export default function DashboardHomePage() {
                     {/* Card Footer */}
                     <div className="bg-surface-container-low px-space-md py-3 flex items-center justify-between border-t border-surface-variant/30">
                       <div className="flex items-center gap-1.5 text-on-surface-variant font-label-md text-label-md">
-                        <Clock className="w-3.5 h-3.5 text-secondary flex-shrink-0" />
+                        <Clock className="w-3.5 h-3.5 text-secondary shrink-0" />
                         <span>Curated Look</span>
                       </div>
                       <Link

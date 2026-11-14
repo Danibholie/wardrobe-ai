@@ -11,10 +11,8 @@ function getAI() {
 
 const CANDIDATE_MODELS = [
   "gemini-3.8-flash",
-  "gemini-flash-latest",
-  "gemini-3.6-flash",
   "gemini-3.5-flash-lite",
-  "gemini-flash-lite-latest",
+  "gemini-flash-latest",
 ];
 
 const clothingSchema = {
@@ -167,6 +165,8 @@ Return valid JSON adhering strictly to the schema.`,
           responseMimeType: "application/json",
           responseSchema: clothingSchema,
           temperature: 0.1,
+          abortSignal: AbortSignal.timeout(12000),
+          httpOptions: { timeout: 12000 },
         },
       });
 
@@ -341,6 +341,8 @@ STRICT RULES:
           responseMimeType: "application/json",
           responseSchema: recommendationSchema,
           temperature: 0.3,
+          abortSignal: AbortSignal.timeout(14000),
+          httpOptions: { timeout: 14000 },
         },
       });
 

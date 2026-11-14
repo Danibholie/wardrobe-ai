@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import {
   Sparkles,
@@ -24,7 +24,10 @@ import {
   Zap,
 } from "lucide-react";
 import { formatAiError } from "@/lib/errors";
-import { useLocationWeather, detectLocationAndWeather } from "@/hooks/useLocationWeather";
+import {
+  useLocationWeather,
+  detectLocationAndWeather,
+} from "@/hooks/useLocationWeather";
 import { useSubscription } from "@/hooks/useSubscription";
 import { PricingModal } from "@/components/PricingModal";
 import { SocialLinks } from "@/components/SocialLinks";
@@ -88,10 +91,22 @@ const STYLE_OPTIONS = [
 ];
 
 const LOCATION_PRESETS = [
-  { label: "Lagos (Island)", loc: "Victoria Island, Lagos", w: "31°C · Humid · Island breeze" },
-  { label: "Lagos (Mainland)", loc: "Ikeja, Lagos", w: "32°C · Warm & Tropical" },
+  {
+    label: "Lagos (Island)",
+    loc: "Victoria Island, Lagos",
+    w: "31°C · Humid · Island breeze",
+  },
+  {
+    label: "Lagos (Mainland)",
+    loc: "Ikeja, Lagos",
+    w: "32°C · Warm & Tropical",
+  },
   { label: "Abuja", loc: "Abuja, Nigeria", w: "29°C · Sunny & Dry" },
-  { label: "Port Harcourt", loc: "Port Harcourt, Nigeria", w: "28°C · Rain showers" },
+  {
+    label: "Port Harcourt",
+    loc: "Port Harcourt, Nigeria",
+    w: "28°C · Rain showers",
+  },
   { label: "London", loc: "London, UK", w: "16°C · Mild & Overcast" },
 ];
 
@@ -105,7 +120,8 @@ function getItemGridProps(index: number, total: number) {
   }
   if (total === 2) {
     return {
-      gridClass: index === 0 ? "col-span-2 md:col-span-7" : "col-span-2 md:col-span-5",
+      gridClass:
+        index === 0 ? "col-span-2 md:col-span-7" : "col-span-2 md:col-span-5",
       aspectClass: "aspect-[4/3]",
     };
   }
@@ -121,12 +137,16 @@ function getItemGridProps(index: number, total: number) {
   const isFirstInPair = index % 2 === 0;
   if (pairIndex % 2 === 0) {
     return {
-      gridClass: isFirstInPair ? "col-span-2 md:col-span-7" : "col-span-1 md:col-span-5",
+      gridClass: isFirstInPair
+        ? "col-span-2 md:col-span-7"
+        : "col-span-1 md:col-span-5",
       aspectClass: isFirstInPair ? "aspect-[4/3]" : "aspect-square",
     };
   } else {
     return {
-      gridClass: isFirstInPair ? "col-span-1 md:col-span-5" : "col-span-2 md:col-span-7",
+      gridClass: isFirstInPair
+        ? "col-span-1 md:col-span-5"
+        : "col-span-2 md:col-span-7",
       aspectClass: isFirstInPair ? "aspect-square" : "aspect-[4/3]",
     };
   }
@@ -162,18 +182,47 @@ export default function PlanPage() {
   const [savingIndex, setSavingIndex] = useState<number | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const { subscription, loading: loadingSubscription, refreshSubscription } = useSubscription();
+  const {
+    subscription,
+    loading: loadingSubscription,
+    refreshSubscription,
+  } = useSubscription();
   const [pricingOpen, setPricingOpen] = useState(false);
-  const [pricingReason, setPricingReason] = useState<string | undefined>(undefined);
+  const [pricingReason, setPricingReason] = useState<string | undefined>(
+    undefined,
+  );
   const [limitReached, setLimitReached] = useState(false);
   const [isWardrobeCapped, setIsWardrobeCapped] = useState(false);
   const [totalWardrobeCount, setTotalWardrobeCount] = useState<number>(0);
 
+  const errorRef = useRef<HTMLDivElement | null>(null);
+  const [curatingStep, setCuratingStep] = useState(0);
+
+  const CURATING_MESSAGES = [
+    "Curating outfit from your wardrobe...",
+    "Harmonizing colors & styling coordinates...",
+    "Adapting to weather & occasions...",
+    "Connecting to AI styling cluster... almost ready...",
+  ];
+
+  useEffect(() => {
+    if (!submitting) {
+      setCuratingStep(0);
+      return;
+    }
+    const t1 = setTimeout(() => setCuratingStep(1), 3000);
+    const t2 = setTimeout(() => setCuratingStep(2), 7000);
+    const t3 = setTimeout(() => setCuratingStep(3), 14000);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, [submitting]);
+
   // Auto-detected location & weather
-  const {
-    fullLocation: autoLocation,
-    weatherSummary: autoWeather,
-  } = useLocationWeather();
+  const { fullLocation: autoLocation, weatherSummary: autoWeather } =
+    useLocationWeather();
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -222,15 +271,17 @@ export default function PlanPage() {
     if (!hasParamLoc && autoLocation) {
       setLocation((prev) => (prev === "Lagos, Nigeria" ? autoLocation : prev));
       setCustomLocationInput((prev) =>
-        prev === "" || prev === "Lagos, Nigeria" ? autoLocation : prev
+        prev === "" || prev === "Lagos, Nigeria" ? autoLocation : prev,
       );
     }
     if (!hasParamWeather && autoWeather) {
       setWeather((prev) =>
-        prev === "31°C · Humid · Rain possible" ? autoWeather : prev
+        prev === "31°C · Humid · Rain possible" ? autoWeather : prev,
       );
       setCustomWeatherInput((prev) =>
-        prev === "" || prev === "31°C · Humid · Rain possible" ? autoWeather : prev
+        prev === "" || prev === "31°C · Humid · Rain possible"
+          ? autoWeather
+          : prev,
       );
     }
   }, [autoLocation, autoWeather]);
@@ -262,7 +313,7 @@ export default function PlanPage() {
     setIsEditingLocation(false);
   }
 
-  function handleApplyPreset(preset: typeof LOCATION_PRESETS[0]) {
+  function handleApplyPreset(preset: (typeof LOCATION_PRESETS)[0]) {
     setLocation(preset.loc);
     setWeather(preset.w);
     setCustomLocationInput(preset.loc);
@@ -275,21 +326,29 @@ export default function PlanPage() {
     setLimitReached(false);
     setSubmitting(true);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 35000);
+
     try {
       const response = await fetch("/api/recommend-outfits", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({
           occasion,
           outing: outing.trim(),
           date: planDate,
           timeOfDay,
-          style: style === "Surprise me" ? "Versatile, expressive & fashionable" : style,
+          style:
+            style === "Surprise me"
+              ? "Versatile, expressive & fashionable"
+              : style,
           location,
           weather,
           notes: notes.trim(),
         }),
       });
+      clearTimeout(timeoutId);
 
       const data = await response.json();
 
@@ -312,10 +371,20 @@ export default function PlanPage() {
 
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
-      setError(
-        formatAiError(err, "Something went wrong while curating your outfit.")
+      clearTimeout(timeoutId);
+      const friendlyErr = formatAiError(
+        err,
+        "Something went wrong while curating your outfit.",
       );
+      setError(friendlyErr);
+      setTimeout(() => {
+        errorRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }, 100);
     } finally {
+      clearTimeout(timeoutId);
       setSubmitting(false);
     }
   }
@@ -356,7 +425,7 @@ export default function PlanPage() {
         if (data.limitReached) {
           setPricingReason(
             data.message ||
-              "You have reached the 5-saved-outfit limit on Starter Wardrobe. Upgrade to Pro to save unlimited outfits."
+              "You have reached the 5-saved-outfit limit on Starter Wardrobe. Upgrade to Pro to save unlimited outfits.",
           );
           setPricingOpen(true);
         }
@@ -379,7 +448,11 @@ export default function PlanPage() {
     }, 500);
 
     // If there are multiple pre-fetched outfits, cycle to next
-    if (outfits && outfits.length > 1 && activeOutfitIndex < outfits.length - 1) {
+    if (
+      outfits &&
+      outfits.length > 1 &&
+      activeOutfitIndex < outfits.length - 1
+    ) {
       setActiveOutfitIndex((prev) => prev + 1);
       return;
     }
@@ -393,7 +466,8 @@ export default function PlanPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  const currentOutfit = outfits && outfits.length > 0 ? outfits[activeOutfitIndex] : null;
+  const currentOutfit =
+    outfits && outfits.length > 0 ? outfits[activeOutfitIndex] : null;
   const isSaved = !!savedOutfits[activeOutfitIndex];
   const isSaving = savingIndex === activeOutfitIndex;
 
@@ -425,7 +499,8 @@ export default function PlanPage() {
                   </h1>
                   <p className="font-body-md text-body-md text-on-surface-variant">
                     {location} · {weather} | {occasion}
-                    {outing ? ` (${outing})` : ""} · {planDate} {timeOfDay} / {style}
+                    {outing ? ` (${outing})` : ""} · {planDate} {timeOfDay} /{" "}
+                    {style}
                   </p>
 
                   {/* Active Wardrobe Window Notice for Starter */}
@@ -434,7 +509,9 @@ export default function PlanPage() {
                       <div className="flex items-center gap-2">
                         <Sparkles className="w-4 h-4 text-secondary shrink-0" />
                         <span>
-                          Styled using your <strong>20 active items</strong>. Upgrade to Pro to style across all {totalWardrobeCount} items in your closet.
+                          Styled using your <strong>20 active items</strong>.
+                          Upgrade to Pro to style across all{" "}
+                          {totalWardrobeCount} items in your closet.
                         </span>
                       </div>
                       <button
@@ -474,6 +551,28 @@ export default function PlanPage() {
                 )}
               </section>
 
+              {/* Error Alert if regeneration or refresh fails */}
+              {error && (
+                <div
+                  role="alert"
+                  ref={errorRef}
+                  className="p-4 rounded-xl bg-red-50/95 border border-red-200 text-xs text-red-800 flex items-center justify-between gap-3 shadow-xs"
+                >
+                  <div className="flex items-center gap-2 flex-1">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+                    <span>{error}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => fetchRecommendations()}
+                    className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 shadow-xs"
+                  >
+                    <RotateCw className="w-3.5 h-3.5" />
+                    <span>Try again</span>
+                  </button>
+                </div>
+              )}
+
               {/* Visual Outfit Composition (Editorial Flat-Lay Architecture) */}
               <section className="grid grid-cols-1 lg:grid-cols-12 gap-space-md items-start">
                 {/* Asymmetric Flat Lay Canvas (8 Cols) */}
@@ -482,7 +581,7 @@ export default function PlanPage() {
                     {currentOutfit.items.map((item, idx) => {
                       const { gridClass, aspectClass } = getItemGridProps(
                         idx,
-                        currentOutfit.items.length
+                        currentOutfit.items.length,
                       );
 
                       return (
@@ -540,21 +639,27 @@ export default function PlanPage() {
                     </div>
 
                     {/* Actionable Styling Tips */}
-                    {currentOutfit.stylingTips && currentOutfit.stylingTips.length > 0 && (
-                      <div className="bg-surface-container-low rounded-lg p-space-md shadow-sm space-y-2">
-                        <span className="font-label-caps text-label-caps uppercase tracking-wider text-secondary font-bold block">
-                          Styling Direction
-                        </span>
-                        <ul className="space-y-1.5 font-body-sm text-body-sm text-on-surface-variant">
-                          {currentOutfit.stylingTips.map((tip, idx) => (
-                            <li key={idx} className="flex items-start gap-1.5">
-                              <span className="text-secondary font-bold leading-none mt-0.5">•</span>
-                              <span>{tip}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                    {currentOutfit.stylingTips &&
+                      currentOutfit.stylingTips.length > 0 && (
+                        <div className="bg-surface-container-low rounded-lg p-space-md shadow-sm space-y-2">
+                          <span className="font-label-caps text-label-caps uppercase tracking-wider text-secondary font-bold block">
+                            Styling Direction
+                          </span>
+                          <ul className="space-y-1.5 font-body-sm text-body-sm text-on-surface-variant">
+                            {currentOutfit.stylingTips.map((tip, idx) => (
+                              <li
+                                key={idx}
+                                className="flex items-start gap-1.5"
+                              >
+                                <span className="text-secondary font-bold leading-none mt-0.5">
+                                  •
+                                </span>
+                                <span>{tip}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                   </div>
 
                   {/* Interaction and Action Control Stack */}
@@ -576,12 +681,18 @@ export default function PlanPage() {
                           <Loader2 className="w-5 h-5 animate-spin" />
                         ) : isSaved ? (
                           <>
-                            <Check className="w-5 h-5 text-secondary-container" id="saveIcon" />
+                            <Check
+                              className="w-5 h-5 text-secondary-container"
+                              id="saveIcon"
+                            />
                             <span id="saveLabel">Outfit saved</span>
                           </>
                         ) : (
                           <>
-                            <Heart className="w-5 h-5 fill-current" id="saveIcon" />
+                            <Heart
+                              className="w-5 h-5 fill-current"
+                              id="saveIcon"
+                            />
                             <span id="saveLabel">Save outfit</span>
                           </>
                         )}
@@ -601,7 +712,9 @@ export default function PlanPage() {
                             isRefreshing ? "rotate-180 animate-spin" : ""
                           }`}
                         />
-                        <span>{submitting ? "Curating look..." : "Try another"}</span>
+                        <span>
+                          {submitting ? "Curating look..." : "Try another"}
+                        </span>
                       </button>
                     </div>
 
@@ -634,7 +747,10 @@ export default function PlanPage() {
                   </div>
                   <div className="flex items-center gap-6">
                     <SocialLinks variant="compact" iconSize="sm" />
-                    <div>© {new Date().getFullYear()} Wardrobe AI. Lagos &amp; Global.</div>
+                    <div>
+                      © {new Date().getFullYear()} Wardrobe AI. Lagos &amp;
+                      Global.
+                    </div>
                   </div>
                 </div>
               </footer>
@@ -649,7 +765,7 @@ export default function PlanPage() {
                 <div className="text-center space-y-space-xs">
                   {/* Weather & Location Pill */}
                   <div className="inline-flex items-center gap-2 bg-surface-container-high px-space-md py-1.5 rounded-full text-on-surface mb-space-xs border border-outline-variant/30 shadow-2xs">
-                    <CloudSun className="w-4 h-4 text-secondary flex-shrink-0" />
+                    <CloudSun className="w-4 h-4 text-secondary shrink-0" />
                     <span className="font-label-caps text-label-caps font-semibold tracking-wider">
                       {location} · {weather}
                     </span>
@@ -710,7 +826,9 @@ export default function PlanPage() {
                           </label>
                           <input
                             value={customLocationInput}
-                            onChange={(e) => setCustomLocationInput(e.target.value)}
+                            onChange={(e) =>
+                              setCustomLocationInput(e.target.value)
+                            }
                             placeholder="e.g. Victoria Island, Lagos, Abuja"
                             className="w-full text-xs rounded-lg border border-outline-variant/40 bg-surface-container-low px-3 py-2 text-on-surface outline-none focus:border-primary"
                           />
@@ -721,7 +839,9 @@ export default function PlanPage() {
                           </label>
                           <input
                             value={customWeatherInput}
-                            onChange={(e) => setCustomWeatherInput(e.target.value)}
+                            onChange={(e) =>
+                              setCustomWeatherInput(e.target.value)
+                            }
                             placeholder="e.g. 31°C Humid, Rain possible, 22°C A/C"
                             className="w-full text-xs rounded-lg border border-outline-variant/40 bg-surface-container-low px-3 py-2 text-on-surface outline-none focus:border-primary"
                           />
@@ -751,7 +871,8 @@ export default function PlanPage() {
                     What are you wearing today?
                   </h1>
                   <p className="font-body-lg text-body-md sm:text-body-lg text-on-surface-variant max-w-lg mx-auto">
-                    Tell us your plans. We&apos;ll curate the perfect outfit strictly from clothes you own.
+                    Tell us your plans. We&apos;ll curate the perfect outfit
+                    strictly from clothes you own.
                   </p>
                 </div>
 
@@ -763,7 +884,9 @@ export default function PlanPage() {
                       Your wardrobe is empty
                     </h3>
                     <p className="font-body-sm text-body-sm text-on-surface-variant max-w-md mx-auto">
-                      Please add your shirts, trousers, traditional pieces, or shoes first so the AI stylist can combine items from your personal collection.
+                      Please add your shirts, trousers, traditional pieces, or
+                      shoes first so the AI stylist can combine items from your
+                      personal collection.
                     </p>
                     <Link
                       href="/wardrobe/add"
@@ -790,50 +913,54 @@ export default function PlanPage() {
                         Required
                       </span>
                     </div>
-                    <div className="flex flex-wrap gap-space-xs sm:gap-space-sm" id="occasion-group">
-                      {loadingSubscription ? (
-                        Array.from({ length: 6 }).map((_, i) => (
-                          <div
-                            key={i}
-                            className="h-[38px] rounded-full bg-[#EAE8E2] animate-pulse"
-                            style={{ width: `${[72, 80, 76, 68, 86, 92][i]}px` }}
-                          />
-                        ))
-                      ) : (
-                        OCCASIONS.map((occ) => {
-                          const isSelected = occasion === occ;
-                          const isProOnly = occ === "Wedding" || occ === "Date";
-                          const isLocked = !subscription?.isPro && isProOnly;
-                          return (
-                            <button
-                              key={occ}
-                              type="button"
-                              onClick={() => {
-                                if (isLocked) {
-                                  setPricingReason(
-                                    `Special event styling (${occ}) is exclusive to Wardrobe Pro. Upgrade to style looks for weddings, owambe, and date nights.`
-                                  );
-                                  setPricingOpen(true);
-                                  return;
-                                }
-                                setOccasion(occ);
+                    <div
+                      className="flex flex-wrap gap-space-xs sm:gap-space-sm"
+                      id="occasion-group"
+                    >
+                      {loadingSubscription
+                        ? Array.from({ length: 6 }).map((_, i) => (
+                            <div
+                              key={i}
+                              className="h-[38px] rounded-full bg-[#EAE8E2] animate-pulse"
+                              style={{
+                                width: `${[72, 80, 76, 68, 86, 92][i]}px`,
                               }}
-                              className={`px-space-md py-2 rounded-full font-label-md text-label-md transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
-                                isSelected
-                                  ? "bg-primary-container text-on-primary shadow-sm font-semibold"
-                                  : "bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-medium"
-                              }`}
-                            >
-                              <span>{occ}</span>
-                              {isLocked && (
-                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-700 border border-amber-500/30">
-                                  PRO
-                                </span>
-                              )}
-                            </button>
-                          );
-                        })
-                      )}
+                            />
+                          ))
+                        : OCCASIONS.map((occ) => {
+                            const isSelected = occasion === occ;
+                            const isProOnly =
+                              occ === "Wedding" || occ === "Date";
+                            const isLocked = !subscription?.isPro && isProOnly;
+                            return (
+                              <button
+                                key={occ}
+                                type="button"
+                                onClick={() => {
+                                  if (isLocked) {
+                                    setPricingReason(
+                                      `Special event styling (${occ}) is exclusive to Wardrobe Pro. Upgrade to style looks for weddings, owambe, and date nights.`,
+                                    );
+                                    setPricingOpen(true);
+                                    return;
+                                  }
+                                  setOccasion(occ);
+                                }}
+                                className={`px-space-md py-2 rounded-full font-label-md text-label-md transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
+                                  isSelected
+                                    ? "bg-primary-container text-on-primary shadow-sm font-semibold"
+                                    : "bg-surface-container hover:bg-surface-container-high text-on-surface-variant font-medium"
+                                }`}
+                              >
+                                <span>{occ}</span>
+                                {isLocked && (
+                                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-700 border border-amber-500/30">
+                                    PRO
+                                  </span>
+                                )}
+                              </button>
+                            );
+                          })}
                     </div>
                   </div>
 
@@ -898,7 +1025,10 @@ export default function PlanPage() {
                       <label className="font-headline-sm text-headline-sm text-primary font-medium">
                         Time of Day
                       </label>
-                      <div className="grid grid-cols-3 gap-space-xs" id="time-group">
+                      <div
+                        className="grid grid-cols-3 gap-space-xs"
+                        id="time-group"
+                      >
                         {TIME_OPTIONS.map((t) => {
                           const Icon = t.icon;
                           const isSelected = timeOfDay === t.label;
@@ -927,7 +1057,10 @@ export default function PlanPage() {
                     <label className="font-headline-sm text-headline-sm text-primary font-medium">
                       Preferred Style
                     </label>
-                    <div className="flex flex-wrap gap-space-xs" id="style-group">
+                    <div
+                      className="flex flex-wrap gap-space-xs"
+                      id="style-group"
+                    >
                       {STYLE_OPTIONS.map((st) => {
                         const isSelected = style === st;
                         return (
@@ -990,10 +1123,21 @@ export default function PlanPage() {
                   ) : error ? (
                     <div
                       role="alert"
-                      className="p-3.5 rounded-xl bg-red-50/90 border border-red-200 text-xs text-red-800 flex items-start gap-2.5 leading-relaxed shadow-2xs"
+                      ref={errorRef}
+                      className="p-3.5 rounded-xl bg-red-50/95 border border-red-200 text-xs text-red-800 flex items-center justify-between gap-2.5 leading-relaxed shadow-xs"
                     >
-                      <AlertCircle className="w-4 h-4 shrink-0 text-red-600 mt-0.5" />
-                      <span className="flex-1">{error}</span>
+                      <div className="flex items-start gap-2.5 flex-1">
+                        <AlertCircle className="w-4 h-4 shrink-0 text-red-600 mt-0.5" />
+                        <span className="flex-1">{error}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => fetchRecommendations()}
+                        className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 shadow-xs"
+                      >
+                        <RotateCw className="w-3.5 h-3.5" />
+                        <span>Retry</span>
+                      </button>
                     </div>
                   ) : null}
 
@@ -1008,7 +1152,7 @@ export default function PlanPage() {
                       {submitting ? (
                         <>
                           <Loader2 className="w-5 h-5 animate-spin" />
-                          <span>Curating outfit from your wardrobe...</span>
+                          <span>{CURATING_MESSAGES[curatingStep] || "Curating outfit from your wardrobe..."}</span>
                         </>
                       ) : (
                         <>
@@ -1018,7 +1162,8 @@ export default function PlanPage() {
                       )}
                     </button>
                     <span className="font-body-sm text-body-sm text-on-surface-variant text-center pt-1">
-                      Ensembles selected strictly from pieces catalogued in your personal wardrobe.
+                      Ensembles selected strictly from pieces catalogued in your
+                      personal wardrobe.
                     </span>
                   </div>
                 </form>

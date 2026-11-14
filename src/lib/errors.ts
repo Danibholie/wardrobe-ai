@@ -68,7 +68,14 @@ export function parseAiError(
   if (typeof error === "string") {
     rawText = error;
   } else if (error instanceof Error) {
-    rawText = error.message;
+    const cause = (error as { cause?: unknown }).cause;
+    let causeText = "";
+    if (cause instanceof Error) {
+      causeText = `${cause.name} ${cause.message} ${(cause as { code?: string }).code || ""}`;
+    } else if (cause && typeof cause === "object") {
+      causeText = JSON.stringify(cause);
+    }
+    rawText = `${error.name}: ${error.message} ${causeText}`;
   } else if (error && typeof error === "object") {
     rawText = JSON.stringify(error);
   }
@@ -122,8 +129,11 @@ export function parseAiError(
   const isOverloaded =
     statusCode === 503 ||
     statusStr === "UNAVAILABLE" ||
+    searchCorpus.includes("503") ||
+    searchCorpus.includes("unavailable") ||
     searchCorpus.includes("overloaded") ||
     searchCorpus.includes("high demand") ||
+    searchCorpus.includes("spikes in demand") ||
     searchCorpus.includes("temporarily unavailable");
 
   // Check 3: Authentication / API Key issues
@@ -147,7 +157,9 @@ export function parseAiError(
     searchCorpus.includes("timed out") ||
     searchCorpus.includes("timeout") ||
     searchCorpus.includes("aborterror") ||
-    searchCorpus.includes("aborted");
+    searchCorpus.includes("aborted") ||
+    searchCorpus.includes("headerstimeouterror") ||
+    searchCorpus.includes("und_err_headers_timeout");
 
   // Build the user-friendly message
   let friendlyMessage = fallbackMessage;
